@@ -1,0 +1,1194 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BagiStore - Bỏ cả thế giới vào Balo của bạn</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root{--orange:#f97316;--dark:#0f172a;--muted:#6b7280}
+    /* Slightly reduce base font to make UI a bit smaller */
+    html{font-size:15px}
+    *,*::before,*::after{box-sizing:border-box}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; margin:0; color:var(--dark); background:#fff; padding-left:6px; padding-right:6px}
+    /* Top marquee */
+    .top-marquee{background:var(--orange); color:white; font-size:13px; overflow:hidden; white-space:nowrap}
+    .top-marquee .track{display:inline-block;padding:6px 0; transform:translateX(100%); animation:marquee 14s linear infinite}
+    @keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+
+    /* Header row (overlay on hero) */
+    header.site-header{position:relative;border-bottom:1px solid #eee}
+    .header-top{display:flex;align-items:center;gap:12px;padding:10px 16px;justify-content:space-between}
+    .header-left{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--muted)}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo img{width:56px;height:56px;object-fit:contain}
+    .search-area{flex:1;display:flex;align-items:center;gap:12px;padding:0 16px}
+    .cart-btn{background:transparent;border:0;cursor:pointer;font-size:18px;position:relative;padding:8px;border-radius:8px}
+    .cart-btn i{color:var(--dark)}
+    /* place badge at top-right corner (slightly outside) so it doesn't cover the icon */
+    .cart-count{position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:999px;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;font-size:11px;font-weight:700;border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,0.15);pointer-events:none}
+    .search-box{flex:1;display:flex;border:1px solid #e6e6e6;border-radius:999px;padding:6px 10px;align-items:center;background:#fff}
+    .search-box input{border:0;outline:none;flex:1;padding:8px;font-size:14px}
+    .auth-buttons button{margin-left:8px;padding:8px 12px;border-radius:6px;border:1px solid transparent;background:var(--orange);color:#fff;cursor:pointer}
+    .auth-buttons .secondary{background:#fff;color:var(--orange);border-color:#eee}
+    /* Ensure avatar button inside auth-buttons does not inherit orange background */
+    .auth-buttons button.user-avatar{background:transparent;color:var(--dark);padding:0;margin-left:0;border:2px solid rgba(0,0,0,0.04)}
+    .auth-buttons button.user-avatar img{display:block;width:100%;height:100%;object-fit:cover;border-radius:999px}
+    /* Auth avatar/menu */
+    /* Larger user avatar for better visibility */
+    .user-avatar{width:64px;height:64px;border-radius:999px;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:#ffffff;color:var(--dark);font-weight:700;cursor:pointer;border:2px solid rgba(0,0,0,0.04);font-size:1.1rem}
+    .user-menu{position:absolute;right:12px;top:86px;background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.08);min-width:220px;padding:8px;display:none;z-index:200}
+    .user-menu.active{display:block}
+    .user-menu .item{padding:8px 10px;border-radius:6px;cursor:pointer}
+    .user-menu .item:hover{background:#f8fafc}
+
+    /* Navbar */
+    nav.main-nav{background:#fff;padding:10px 16px;border-top:1px solid #f3f4f6}
+    /* Slightly larger navbar links for better readability */
+    nav.main-nav ul{display:flex;gap:20px;list-style:none;padding:0;margin:0;font-weight:700;justify-content:center;align-items:center;font-size:1.05rem}
+    nav.main-nav a{color:#111;text-decoration:none;transition:color .15s ease;font-size:1.05rem;padding:6px 4px}
+    nav.main-nav a:hover{color:var(--orange)}
+    /* Active / current page link */
+    nav.main-nav a.active{color:var(--orange)}
+
+    /* Carousel - hero (reduced height for a less dominant slideshow) */
+    /* make header overlay the hero by positioning header absolute when needed */
+    header.site-header.overlay { position: absolute; top: 0; left: 0; right: 0; z-index: 50; background: transparent; border-bottom: none; }
+
+    /* Use width:100% (not 100vw) to avoid horizontal overflow that can cut content on the left */
+    /* Reduced default height from full viewport to a smaller, visually balanced size */
+    .carousel{position:relative;overflow:hidden;margin:0;max-width:100%;width:100%;height:46vh;max-height:580px;border-radius:0}
+    .carousel.container{padding:0}
+    .slides{display:flex;transition:transform 0.5s ease;height:100%}
+    /* slide fills the carousel height */
+    .slide{min-width:100%;height:100%;background:transparent;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;position:relative;padding:0;overflow:hidden}
+    /* make image cover the entire slide area without black bars */
+    .slide img{width:100%;height:100%;object-fit:cover;display:block}
+    .carousel .controls{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px}
+    .carousel button{background:rgba(0,0,0,0.35);border:0;color:#fff;padding:10px;border-radius:50%;cursor:pointer}
+    .carousel .dots{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;display:flex;gap:8px}
+    .carousel .dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.6);display:inline-block;cursor:pointer}
+    .carousel .dots span.active{background:var(--orange)}
+
+    /* Product sections */
+    /* Make layout full-width: reduce side whitespace while keeping small inner padding */
+    .container{max-width:100%;width:100%;margin:0;padding:0 24px}
+    /* Section title centered with decorative lines */
+    .section-title{display:flex;align-items:center;justify-content:center;margin-bottom:18px;gap:12px}
+    .section-title::before, .section-title::after{content:"";flex:1;height:4px;background:#f3f3f3;border-radius:2px}
+    .section-title h3{margin:0;color:var(--orange);font-size:1.6rem;font-weight:800;padding:6px 20px;text-transform:uppercase;letter-spacing:1px}
+    /* Desktop: 4 columns; tablet: 2 columns; mobile: 1 column */
+     /* Product grid: use full available width and show 4 columns on desktop
+       Make cards larger so there is no excessive whitespace on both sides */
+     .product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;width:100%;max-width:none;margin:0 auto}
+    @media (max-width:900px){ .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media (max-width:480px){ .product-grid{grid-template-columns:repeat(1,minmax(0,1fr));} }
+
+    /* Responsive carousel height adjustments */
+    @media (max-width:900px){
+      .carousel{height:36vh;max-height:420px}
+    }
+    @media (max-width:480px){
+      .carousel{height:28vh;max-height:300px}
+      .card img{height:180px}
+      /* Slightly reduce nav link size on very small screens to avoid wrapping */
+      nav.main-nav ul{font-size:1rem}
+      nav.main-nav a{font-size:1rem}
+    }
+    .card{border:1px solid #eee;border-radius:8px;overflow:hidden;background:#fff}
+    /* product card: larger image area to reduce side whitespace and make cards feel bigger */
+    /* Larger product images and remove any colored frames */
+    .card img{width:100%;height:320px;object-fit:contain;background:transparent;display:block;padding:8px;border:0;box-shadow:none;outline:0}
+    .card img:focus, .card img:focus-visible{outline:0;border:0}
+    /* ensure avatar images fill the avatar circle */
+    .user-avatar img{width:100%;height:100%;object-fit:cover;border-radius:999px;display:block}
+    .card .body{padding:14px; text-align:center; display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+    .card .body > div:first-child{font-size:1.05rem;font-weight:800;margin:0}
+    .price{color:var(--orange);font-weight:700}
+    /* Removed explicit Add button from product cards; keep utility style if needed elsewhere */
+    .btn-add{display:none}
+
+    /* Card hover: elevate and subtle shadow */
+    .card{border:1px solid #eee;border-radius:8px;overflow:hidden;background:#fff;transition:transform .18s ease,box-shadow .18s ease;border-color:transparent}
+    .card:hover{transform:translateY(-8px);box-shadow:0 14px 30px rgba(15,23,42,0.12);cursor:pointer}
+
+    /* Footer */
+    footer.site-footer{background:#111;color:#fff;padding:24px 16px;margin-top:30px}
+    /* make footer full width */
+    .footer-grid{max-width:100%;width:100%;margin:0;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .social-icons a{color:#fff;margin-right:12px;font-size:20px}
+
+    /* Responsive */
+    @media (max-width:900px){
+      .header-top{flex-direction:column;align-items:flex-start}
+      .search-area{width:100%;padding:0}
+      .carousel .dots{display:none}
+    }
+    /* Checkout page styles */
+    .checkout-wrapper{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:8px 0;flex-wrap:wrap;max-width:1100px;margin:0 auto}
+    .checkout-left{flex:1;min-width:280px;max-width:760px}
+    .checkout-form{background:#fff;padding:18px;border:1px solid #f3f4f6;border-radius:10px}
+    .checkout-form input[type=text], .checkout-form input[type=search], .checkout-form select, .checkout-form textarea{width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:8px;font-size:14px}
+    .checkout-form textarea{min-height:84px;resize:vertical}
+    .checkout-form .row{display:flex;gap:8px}
+    .checkout-form .row .col{flex:1}
+    .checkout-form label{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #f3f4f6;border-radius:8px;background:#fff;cursor:pointer}
+    .checkout-summary{border:1px solid #f3f4f6;padding:16px;border-radius:10px;background:#fff}
+    .checkout-summary img{width:96px;height:96px;object-fit:contain}
+    .checkout-summary .price-row{display:flex;justify-content:space-between;padding:6px 0}
+    .checkout-submit{display:block;width:100%;background:var(--orange);color:#fff;border:0;padding:12px;border-radius:8px;font-weight:800;cursor:pointer}
+    @media (max-width:900px){ .checkout-right{width:100%!important} .checkout-wrapper{flex-direction:column} }
+  </style>
+</head>
+<body>
+  <div class="top-marquee"><div class="track">Chào mừng bạn đến với BagiStore &nbsp;&nbsp;•&nbsp;&nbsp; Bỏ cả thế giới vào Balo của bạn </div></div>
+
+  <header class="site-header">
+    <div class="header-top container">
+      <div class="header-left">
+        <div><i class="fa-solid fa-phone"></i> Hotline: <strong>1900 6789</strong></div>
+        <div style="opacity:.8"><i class="fa-solid fa-location-dot"></i> Hệ thống cửa hàng</div>
+      </div>
+
+      <div class="logo" aria-label="logo">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="/logo2.png" alt="BagiStore logo" style="height:56px;object-fit:contain;display:block">
+          <div>
+            <div style="font-weight:800">BagiStore</div>
+            <div style="font-size:12px;color:var(--muted)">Balo & Phụ kiện</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-area">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass" style="color:var(--muted);margin-right:8px"></i>
+          <input type="search" placeholder="Tìm kiếm sản phẩm" aria-label="Tìm kiếm sản phẩm">
+          <button style="background:var(--orange);border:0;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer">Tìm</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px">
+          <button id="cartBtn" class="cart-btn" aria-label="Giỏ hàng">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span id="cartCount" class="cart-count">0</span>
+          </button>
+
+            <div style="position:relative">
+              <div class="auth-buttons" id="authButtons">
+                <button onclick="onLogin()">Đăng nhập</button>
+                <button class="secondary" onclick="onRegister()">Đăng ký</button>
+              </div>
+              <!-- user menu placeholder -->
+              <div id="userMenu" class="user-menu" aria-hidden="true"></div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="main-nav">
+      <div class="container">
+        <ul>
+          <li><a href="/client" id="nav-home">Trang chủ</a></li>
+          <li><a href="/client/products" id="nav-products">Sản phẩm</a></li>
+          <li><a href="#">Giới thiệu</a></li>
+          <li><a href="#">Tin tức</a></li>
+          <li><a href="#">Liên hệ</a></li>
+          <li><a href="#">Tra cứu</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Carousel -->
+  <div class="carousel container" id="heroCarousel">
+    <div class="slides" id="slides">
+      <!-- Using images from the project's uploads folder -->
+      <div class="slide"><img src="/uploads/images/client1.jpg" alt="balo-slide-1"></div>
+      <div class="slide"><img src="/uploads/images/client2.jpg" alt="balo-slide-2"></div>
+    </div>
+    <div class="controls">
+      <button id="prev"><i class="fa-solid fa-chevron-left"></i></button>
+      <button id="next"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <!-- Products sections -->
+  <main class="container" id="mainContent">
+    <section>
+      <div class="section-title">
+        <h3>Balo mới về</h3>
+      </div>
+      <div class="product-grid" id="newArrival">
+        <!-- items rendered by JS (max 8) -->
+      </div>
+    </section>
+
+    <section style="margin-top:28px">
+      <div class="section-title">
+        <h3>Balo bán chạy</h3>
+      </div>
+      <div class="product-grid" id="bestSellers">
+        <!-- items rendered by JS (max 8) -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <h4 style="margin:0 0 8px 0">BagiStore</h4>
+        <div style="color:#9ca3af">Giày thể thao chính hãng - giao nhanh</div>
+      </div>
+
+      <div>
+        <h4 style="margin:0 0 8px 0">Liên hệ</h4>
+        <div style="color:#9ca3af">Hotline: 1900 6750</div>
+        <div style="color:#9ca3af">Email: support@bagistore.vn</div>
+      </div>
+
+      <div>
+        <h4 style="margin:0 0 8px 0">Kết nối</h4>
+        <div class="social-icons">
+          <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          <a href="#" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:14px;color:#6b7280;font-size:13px">© 2025 BagiStore. All rights reserved.</div>
+  </footer>
+
+  <script>
+    // Simple carousel implementation
+    (function(){
+      const slidesEl = document.getElementById('slides');
+      const slides = document.querySelectorAll('.slide');
+      const dotsEl = document.getElementById('dots');
+      const prev = document.getElementById('prev');
+      const next = document.getElementById('next');
+      let idx = 0;
+      function renderDots(){ dotsEl.innerHTML = ''; slides.forEach((s,i)=>{ const sp = document.createElement('span'); sp.dataset.i = i; sp.onclick = ()=> goTo(i); if(i===idx) sp.classList.add('active'); dotsEl.appendChild(sp); }); }
+      function goTo(i){ idx = (i+slides.length)%slides.length; slidesEl.style.transform = 'translateX(' + (-idx*100) + '%)'; renderDots(); }
+      prev.onclick = ()=> goTo(idx-1); next.onclick = ()=> goTo(idx+1);
+      renderDots(); let timer = setInterval(()=> goTo(idx+1), 4500);
+      // pause on hover
+      const carousel = document.getElementById('heroCarousel'); carousel.addEventListener('mouseenter', ()=> clearInterval(timer)); carousel.addEventListener('mouseleave', ()=> timer = setInterval(()=> goTo(idx+1), 4500));
+    })();
+
+    // Basic auth stubs
+    function onLogin(){
+      // Navigate to the dedicated login page (same folder)
+        window.location.href = '/client/login.html';
+    }
+    function onRegister(){ alert('Mở modal đăng ký (chưa triển khai)'); }
+    
+    // Auth UI: check stored token and show user avatar/menu
+    async function initAuthUI(){
+      const token = localStorage.getItem('bagistore_token');
+      const authButtons = document.getElementById('authButtons');
+      const userMenuEl = document.getElementById('userMenu');
+      if(!token) return; // not logged in
+      // helper to render profile into header/menu
+      function renderUserProfile(data){
+        if(!data) return;
+        // render avatar button replacing authButtons
+        const avatar = document.createElement('button');
+        avatar.className = 'user-avatar';
+        avatar.title = data.hoTen || data.email || data.name || '';
+        avatar.onclick = (e)=>{ userMenuEl.classList.toggle('active'); userMenuEl.setAttribute('aria-hidden', userMenuEl.classList.contains('active')? 'false' : 'true'); };
+        // if server provided avatar image path, use it; otherwise show initials
+        const avatarUrl = data.anhKhachHang || data.avatar || data.anh || null;
+        if(avatarUrl){
+          const img = document.createElement('img');
+          img.src = avatarUrl;
+          img.alt = data.hoTen || data.email || 'avatar';
+          img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
+          avatar.appendChild(img);
+        } else {
+          const initials = (data.hoTen || data.name || data.email || '').split(' ').filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
+          avatar.innerText = initials || 'U';
+        }
+        // replace authButtons content
+        authButtons.innerHTML = '';
+        authButtons.appendChild(avatar);
+
+        // fill user menu
+        userMenuEl.innerHTML = '';
+        const nameEl = document.createElement('div'); nameEl.className='item'; nameEl.style.fontWeight='700'; nameEl.textContent = data.hoTen || data.name || data.email; userMenuEl.appendChild(nameEl);
+        const emailEl = document.createElement('div'); emailEl.className='item'; emailEl.style.color='#6b7280'; emailEl.textContent = data.email || data.username || ''; userMenuEl.appendChild(emailEl);
+        // show phone if available
+        if(data.soDienThoai){ const phoneEl = document.createElement('div'); phoneEl.className='item'; phoneEl.style.color='#6b7280'; phoneEl.textContent = data.soDienThoai; userMenuEl.appendChild(phoneEl); }
+        // show addresses if available
+        if(Array.isArray(data.diaChiKhachHangs) && data.diaChiKhachHangs.length>0){
+          const addrHeader = document.createElement('div'); addrHeader.className='item'; addrHeader.style.fontWeight='700'; addrHeader.style.marginTop='6px'; addrHeader.textContent = 'Địa chỉ'; userMenuEl.appendChild(addrHeader);
+          data.diaChiKhachHangs.forEach(a=>{
+            const line = document.createElement('div'); line.className='item'; line.style.fontSize='13px'; line.style.color='#374151'; line.style.padding='6px 8px';
+            const parts = [];
+            if(a.diaChiCuThe) parts.push(a.diaChiCuThe);
+            if(a.xaPhuong) parts.push(a.xaPhuong);
+            if(a.quanHuyen) parts.push(a.quanHuyen);
+            if(a.thanhPhoTinh) parts.push(a.thanhPhoTinh);
+            line.textContent = parts.join(', ');
+            if(a.macDinh){ const badge = document.createElement('span'); badge.textContent=' Mặc định'; badge.style.background='#ef4444'; badge.style.color='#fff'; badge.style.padding='2px 6px'; badge.style.borderRadius='6px'; badge.style.fontSize='11px'; badge.style.marginLeft='8px'; line.appendChild(badge); }
+            userMenuEl.appendChild(line);
+          });
+        }
+        const hr = document.createElement('div'); hr.style.height='1px'; hr.style.background='#f3f4f6'; hr.style.margin='6px 0'; userMenuEl.appendChild(hr);
+        const profileItem = document.createElement('div'); profileItem.className='item'; profileItem.textContent='Thông tin cá nhân'; profileItem.onclick = ()=>{ window.location.href = 'login.html'; }; userMenuEl.appendChild(profileItem);
+        const logoutItem = document.createElement('div'); logoutItem.className='item'; logoutItem.textContent='Đăng xuất'; logoutItem.onclick = ()=>{ localStorage.removeItem('bagistore_token'); localStorage.removeItem('bagistore_user'); window.location.reload(); }; userMenuEl.appendChild(logoutItem);
+      }
+
+      // first try to render from local cached profile (so UI updates immediately)
+      try{
+        const local = localStorage.getItem('bagistore_user');
+        if(local){
+          const obj = JSON.parse(local);
+          renderUserProfile(obj);
+        }
+      }catch(e){ console.warn('Failed to parse local profile', e); }
+
+      // determine API base
+      const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '8080'
+        ? 'http://localhost:8080'
+        : '';
+
+      // helper: fetch full customer (with addresses) by id
+      async function fetchCustomerFull(id){
+        try{
+          const hdrs = token ? { 'Authorization': 'Bearer ' + token } : {};
+          const r = await fetch(API_BASE + '/api/customers/' + id, { headers: hdrs });
+          if(!r.ok) return null;
+          return await r.json();
+        }catch(err){ console.warn('Failed to fetch customer full', err); return null; }
+      }
+
+      // refresh profile from server to ensure up-to-date info and validate token
+      try{
+        const res = await fetch(API_BASE + '/api/auth/customer/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        if(!res.ok) throw new Error('Not authenticated');
+        let data = await res.json();
+        if(!data) throw new Error('No profile');
+        // try to fetch full customer record (includes addresses) and merge
+        try{
+          const full = await fetchCustomerFull(data.id);
+          if(full){ data = Object.assign({}, data, full); }
+        }catch(e){ /* ignore */ }
+        // save fresh profile in localStorage and render
+        try{ localStorage.setItem('bagistore_user', JSON.stringify(data)); }catch(e){ console.warn('Failed to save user profile locally', e); }
+        renderUserProfile(data);
+      }catch(e){
+        console.warn('Auth check failed', e);
+        // remove stored token if invalid
+        localStorage.removeItem('bagistore_token');
+        localStorage.removeItem('bagistore_user');
+      }
+    }
+
+    // initialize auth UI on load
+    initAuthUI();
+    // Cart utilities: persistent cart stored in localStorage under `bagistore_cart`
+    function _getCart(){ try{ const s = localStorage.getItem('bagistore_cart'); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
+    function _saveCart(cart){ try{ localStorage.setItem('bagistore_cart', JSON.stringify(cart||[])); }catch(e){ console.warn('Save cart failed', e); } }
+    function updateCartCount(){ const el = document.getElementById('cartCount'); if(!el) return; const cart = _getCart(); const total = cart.reduce((s,i)=>s+(Number(i.qty)||0),0); el.textContent = String(total); }
+    // Add item to cart. item: { productId, variantId, sku, title, price, image, color, size, qty, stock }
+    window.addToCart = function(item){
+      if(!item || !item.productId) return { success:false, message:'Dữ liệu không hợp lệ' };
+      const cart = _getCart();
+      // match by variantId when available, otherwise productId+color+size
+      let existing = null;
+      if(item.variantId){ existing = cart.find(ci => ci.variantId && String(ci.variantId) === String(item.variantId)); }
+      if(!existing){ existing = cart.find(ci => (!ci.variantId) && String(ci.productId) === String(item.productId) && (ci.color||'')=== (item.color||'') && (ci.size||'') === (item.size||'')); }
+      const max = (typeof item.stock !== 'undefined' && item.stock !== null) ? Number(item.stock) : Infinity;
+      if(existing){ const newQty = Number(existing.qty||0) + Number(item.qty||0); if(newQty > max) return { success:false, message:'Không đủ hàng trong kho' }; existing.qty = newQty; }
+      else { if(Number(item.qty||0) > max) return { success:false, message:'Không đủ hàng trong kho' }; cart.push({ productId: item.productId, variantId: item.variantId||null, sku: item.sku||null, title: item.title||'', price: Number(item.price||0), image: item.image||'', color: item.color||null, size: item.size||null, qty: Number(item.qty||0), stock: max }); }
+      _saveCart(cart); updateCartCount(); return { success:true };
+    };
+
+    // Simple cart viewer (temporary)
+    function showCartSummary(){ const cart = _getCart(); if(!cart || cart.length===0){ alert('Giỏ hàng trống'); return; } let txt = 'Giỏ hàng:\n'; cart.forEach((c,i)=>{ txt += (i+1)+'. ' + (c.title||'') + ' x' + (c.qty||0) + ' - ' + (c.color?('Màu:'+c.color+' '):'') + (c.size?('Kích thước:'+c.size+' '):'') + '\n'; }); alert(txt); }
+
+    // Toast helper
+    function showToast(msg, timeout=1800){ try{ const t = document.createElement('div'); t.textContent = msg; t.style.position='fixed'; t.style.right='18px'; t.style.bottom='18px'; t.style.background='rgba(0,0,0,0.85)'; t.style.color='#fff'; t.style.padding='10px 14px'; t.style.borderRadius='8px'; t.style.zIndex='9999'; document.body.appendChild(t); setTimeout(()=>{ t.style.transition='opacity .25s'; t.style.opacity='0'; setTimeout(()=>t.remove(),250); }, timeout); }catch(e){ console.warn('toast err', e); } }
+
+    // wire cart button
+    document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#cartBtn')){ showCartSummary(); } });
+    // init count on load
+    updateCartCount();
+
+    // Render product lists (Balo) by fetching from backend API
+    // Shared helper: format currency
+    function formatVnd(n){ if(n==null) return ''; return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₫'; }
+
+    // Exposed as window.renderHomeProducts so it can be re-used after swapping main content
+    window.renderHomeProducts = async function(){
+      // If the client is served from a different origin (e.g., static server on port 5500),
+      // call the backend explicitly on localhost:8080. Otherwise use relative path for same-origin.
+      const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '8080'
+        ? 'http://localhost:8080/api/products'
+        : '/api/products';
+
+      async function fetchJson(url){
+        try {
+          // Do not include credentials for cross-origin calls to allow wildcard CORS during local dev.
+          // If you serve client and API on same origin, you can add credentials: 'include' again.
+          const res = await fetch(url);
+          if(!res.ok) throw new Error('Network response was not ok');
+          return await res.json();
+        } catch (e) {
+          console.warn('API fetch failed', url, e);
+          return null;
+        }
+      }
+
+      // Pick image & price for a product by asking variants endpoint and returning first useful variant
+      async function pickRepresentativeVariant(productId){
+        const variants = await fetchJson(API_BASE + '/' + productId + '/variants');
+        if(!variants || !Array.isArray(variants) || variants.length === 0) return null;
+        // prefer variant that has image and price
+        let best = variants.find(v => v.anhUrl && v.anhUrl.length>0) || variants[0];
+        return best;
+      }
+
+      // Render a grid of product cards
+      function renderGrid(elId, items){
+        const el = document.getElementById(elId); if(!el) return;
+        el.innerHTML = '';
+        const max = 8;
+        const slice = items.slice(0, max);
+        slice.forEach(p => {
+          const card = document.createElement('div'); card.className = 'card';
+          const img = p.img || '/uploads/images/client1.jpg';
+          const title = p.tenSanPham || p.name || 'Sản phẩm';
+          const price = p.gia != null ? formatVnd(p.gia) : (p.price ? formatVnd(p.price) : 'Liên hệ');
+          card.innerHTML = `<img src="${img}" alt="${title}"><div class="body"><div class="title">${title}</div><div class="price">${price}</div></div>`;
+          el.appendChild(card);
+        });
+      }
+
+      // Main flow: fetch products, compute new arrivals (newest) and best sellers (by stock), then fill image/price via variants
+        // 1) Try to get newest products (paginated - newest first)
+        const paginated = await fetchJson(API_BASE + '/paginated?page=1&size=8');
+        let newArrivalProducts = [];
+        if(paginated && (paginated.content || paginated.items || paginated)){
+          // Pagination DTO uses 'content'
+          newArrivalProducts = paginated.content || paginated.items || paginated;
+        }
+
+        // 2) Try to get top-selling products from stats endpoint (last 7 days)
+        const stats = await fetchJson(API_BASE.replace('/products','/stats'));
+        let bestSellers = [];
+        if (stats && Array.isArray(stats.topProducts) && stats.topProducts.length>0) {
+          // TopProductDTO: id, name, qtySold, price, revenue, image
+          bestSellers = stats.topProducts.slice(0,8).map(tp => ({
+            id: tp.id,
+            tenSanPham: tp.name || tp.tenSanPham,
+            soLuongTon: tp.qtySold || 0,
+            img: tp.image || tp.img,
+            gia: tp.price || null
+          }));
+        } else {
+          // Fallback: compute best sellers from all products by stock
+          const allProducts = await fetchJson(API_BASE) || [];
+          bestSellers = allProducts.slice().sort((a,b)=> (b.soLuongTon||0) - (a.soLuongTon||0)).slice(0,8);
+        }
+
+        // For each product in both lists, fetch representative variant for image/price
+        async function enrich(list){
+          return await Promise.all(list.map(async p => {
+            try{
+              const variant = await pickRepresentativeVariant(p.id);
+              return {
+                id: p.id,
+                tenSanPham: p.tenSanPham,
+                soLuongTon: p.soLuongTon,
+                thuongHieu: p.thuongHieu,
+                img: (variant && variant.anhUrl) ? variant.anhUrl : '/uploads/images/client1.jpg',
+                gia: variant && variant.gia ? variant.gia : null
+              };
+            }catch(e){
+              return { id: p.id, tenSanPham: p.tenSanPham, img:'/uploads/images/client1.jpg', gia:null };
+            }
+          }));
+        }
+
+        // If API failed, fallback to local demo list
+        if((!newArrivalProducts || newArrivalProducts.length===0) && (!allProducts || allProducts.length===0)){
+          // fallback demo
+          const demo = [
+            {id:1,tenSanPham:'Balo Du Lịch A',gia:650000,img:'https://images.unsplash.com/photo-1542293787938-c9e299b880c3?w=800&q=60&auto=format&fit=crop'},
+            {id:2,tenSanPham:'Balo Thể Thao B',gia:490000,img:'https://images.unsplash.com/photo-1552345386-d5b2a5b1b6b9?w=800&q=60&auto=format&fit=crop'},
+            {id:3,tenSanPham:'Balo Laptop C',gia:850000,img:'https://images.unsplash.com/photo-1600180758895-3d7dd7c3b1c2?w=800&q=60&auto=format&fit=crop'},
+            {id:4,tenSanPham:'Balo Học Sinh D',gia:320000,img:'https://images.unsplash.com/photo-1593032465170-1f7b3b6c8ef9?w=800&q=60&auto=format&fit=crop'}
+          ];
+          renderGrid('newArrival', demo);
+          renderGrid('bestSellers', demo.slice().reverse());
+          return;
+        }
+
+        // Enrich lists concurrently
+        const [enrichedNew, enrichedBest] = await Promise.all([enrich(newArrivalProducts), enrich(bestSellers)]);
+
+        renderGrid('newArrival', enrichedNew);
+        renderGrid('bestSellers', enrichedBest);
+      };
+    // call initially to populate homepage sections
+    window.renderHomeProducts();
+
+    // Mark the current navbar item as active (handles explicit .html paths)
+    (function setActiveNav(){
+      try{
+        const links = document.querySelectorAll('nav.main-nav a');
+        const path = (location.pathname || '/').toLowerCase();
+
+        links.forEach(a => {
+          a.classList.remove('active');
+          const href = (a.getAttribute('href') || '').toLowerCase();
+          // Normalize href to compare only path portion
+          try { const url = new URL(href, location.origin); if(url.pathname) href = url.pathname; } catch(e) {}
+
+          // Match explicit index/products html paths or directory-style paths
+          const matchesHome = href === '/client/index.html' || href === '/client/' || href === '/client';
+          const matchesProducts = href === '/client/products.html' || href === '/client/products';
+
+          if ((matchesHome && (path === '/client' || path === '/client/' || path === '/client/index.html' || path.endsWith('/client'))) ||
+              (matchesProducts && (path === '/client/products' || path === '/client/products.html' || path.endsWith('/client/products')))) {
+            a.classList.add('active');
+          }
+        });
+      }catch(e){ console.warn('setActiveNav error', e); }
+    })();
+
+      // SPA navigation: swap only `#mainContent` (keep header and footer)
+      (function setupSpaRouting(){
+        const mainEl = document.getElementById('mainContent');
+        if(!mainEl) return;
+        const originalMainHtml = mainEl.innerHTML;
+
+        const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '8080' ? 'http://localhost:8080' : '';
+
+        async function renderProductsFull(pushState = true){
+          function showError(msg){
+            mainEl.innerHTML = `<section><div class="section-title"><h3>Danh sách sản phẩm</h3></div><div style="padding:24px;color:#b91c1c">${msg}</div></section>`;
+          }
+
+          try{
+            // hide the hero carousel on the full products page for a cleaner layout
+            const carouselEl = document.getElementById('heroCarousel');
+            if(carouselEl) carouselEl.style.display = 'none';
+
+            mainEl.innerHTML = '<section><div class="section-title"><h3>Danh sách sản phẩm</h3></div><div style="padding:24px;color:var(--muted)">Đang tải sản phẩm...</div></section>';
+            console.debug('Fetching product cards from', API_BASE + '/api/products/cards');
+            const res = await fetch(API_BASE + '/api/products/cards');
+            if(!res.ok){
+              showError('Lỗi khi tải sản phẩm: ' + res.status + ' ' + res.statusText);
+              console.error('Failed to fetch /api/products/cards', res.status, res.statusText);
+              return;
+            }
+            const data = await res.json();
+            // build markup
+            let html = '<section><div class="section-title"><h3>Danh sách sản phẩm</h3></div>';
+            html += '<div class="product-grid" id="productsFullGrid"></div></section>';
+            mainEl.innerHTML = html;
+            const grid = document.getElementById('productsFullGrid');
+            if(!data || data.length===0){ grid.innerHTML = '<div style="padding:24px;color:#6b7280">Không có sản phẩm.</div>'; }
+            else {
+              data.forEach(p => {
+                const card = document.createElement('div'); card.className = 'card';
+                const img = document.createElement('img'); img.src = p.image || '/uploads/images/client1.jpg'; img.alt = p.tenSanPham || '';
+                const body = document.createElement('div'); body.className = 'body';
+                const title = document.createElement('div'); title.className = 'title'; title.textContent = p.tenSanPham || '';
+                const price = document.createElement('div'); price.className = 'price';
+                if(p.minPrice==null && p.maxPrice==null) price.textContent = 'Liên hệ';
+                else if(p.minPrice!=null && p.maxPrice!=null && p.minPrice === p.maxPrice) price.textContent = formatVnd(p.minPrice);
+                else price.textContent = formatVnd(p.minPrice) + ' - ' + formatVnd(p.maxPrice);
+                body.appendChild(title); body.appendChild(price);
+                card.appendChild(img); card.appendChild(body);
+                card.addEventListener('click', ()=>{
+                  if(window.renderProductDetail) return window.renderProductDetail(p.id, true);
+                  window.location.href = '/client/product.html?id=' + p.id;
+                });
+                grid.appendChild(card);
+              });
+            }
+            if(pushState) history.pushState({page:'products'}, '', '/client/products');
+            // update active nav
+            (function(){ const links = document.querySelectorAll('nav.main-nav a'); links.forEach(a=>a.classList.toggle('active', (a.getAttribute('href')||'').includes('products'))); })();
+          }catch(e){ console.error('Failed to load products', e); showError('Lỗi khi tải sản phẩm. Kiểm tra console để biết thêm chi tiết.'); }
+        }
+
+        // Render product detail inside the main content area and keep header/footer
+        async function renderProductDetail(productId, pushState = true){
+          const carouselEl = document.getElementById('heroCarousel');
+          if(carouselEl) carouselEl.style.display = 'none';
+          mainEl.innerHTML = '<section><div class="section-title"><h3>Chi tiết sản phẩm</h3></div><div style="padding:24px;color:var(--muted)">Đang tải chi tiết...</div></section>';
+
+          try{
+            console.debug('Fetching product detail for', productId);
+            const prodRes = await fetch(API_BASE + '/api/products/' + productId);
+            let product = null;
+            if(prodRes && prodRes.ok) {
+              // some servers may return a product object here
+              product = await prodRes.json();
+            } else {
+              // fallback: try to fetch product summaries list and find by id (API provides /api/products -> ProductSummaryDTO)
+              try{
+                const listRes = await fetch(API_BASE + '/api/products');
+                if(listRes && listRes.ok){
+                  const list = await listRes.json();
+                  if(Array.isArray(list)){
+                    // entries may be ProductSummaryDTO with id field
+                    product = list.find(p=> p && (p.id === Number(productId) || String(p.id) === String(productId)) ) || null;
+                  }
+                }
+              }catch(e){/* ignore */}
+            }
+            const varRes = await fetch(API_BASE + '/api/products/' + productId + '/variants');
+            let variants = [];
+            if(varRes && varRes.ok) variants = await varRes.json();
+
+            // Normalize variant fields to support multiple API shapes
+            variants = variants.map(v => ({
+              id: v.id || v.variantId || v.variant_id,
+              price: v.gia ?? v.price ?? v.unitPrice ?? v.priceVnd ?? null,
+              image: v.anhUrl ?? v.anh ?? v.image ?? v.imageUrl ?? v.img ?? null,
+              // prefer human-readable color name but also keep maMau (hex) available in raw
+              color: v.mauSac ?? v.tenMau ?? v.mau ?? v.color ?? v.colorName ?? v.tenMau ?? null,
+              // map reported size field names (this API uses 'kichThuoc')
+              size: v.kichThuoc ?? v.kichCo ?? v.kich_co ?? v.size ?? v.kichCoTen ?? null,
+              stock: v.soLuongTon ?? v.soLuong ?? v.soLuong ?? v.stock ?? v.quantity ?? null,
+              sku: v.sku ?? v.maVariant ?? null,
+              raw: v
+            }));
+
+            // derive display data
+            const title = (product && (product.tenSanPham || product.name)) || (variants[0] && (variants[0].raw?.tenSanPham || variants[0].raw?.name)) || 'Sản phẩm';
+            // Robust extractor: recursively search an object for keys matching common brand/material names
+            function findFieldRecursive(obj, keyRegexes, maxDepth = 4, seen = new WeakSet()){
+              if(!obj || typeof obj !== 'object') return '';
+              if(seen.has(obj)) return '';
+              seen.add(obj);
+              if(maxDepth <= 0) return '';
+              try{
+                // direct property match first
+                for(const k of Object.keys(obj)){
+                  for(const rx of keyRegexes){
+                    if(rx.test(k)){
+                      const val = obj[k];
+                      if(val == null) continue;
+                      if(typeof val === 'string' && val.trim()) return val.trim();
+                      if(typeof val === 'number') return String(val);
+                      if(typeof val === 'object'){
+                        // try common nested name properties
+                        if(val.ten && String(val.ten).trim()) return String(val.ten).trim();
+                        if(val.name && String(val.name).trim()) return String(val.name).trim();
+                        if(val.label && String(val.label).trim()) return String(val.label).trim();
+                      }
+                    }
+                  }
+                }
+                // deep search: iterate children
+                for(const k of Object.keys(obj)){
+                  const child = obj[k];
+                  if(child && typeof child === 'object'){
+                    // arrays: check items
+                    if(Array.isArray(child)){
+                      for(const it of child){
+                        const found = findFieldRecursive(it, keyRegexes, maxDepth-1, seen);
+                        if(found) return found;
+                      }
+                    } else {
+                      const found = findFieldRecursive(child, keyRegexes, maxDepth-1, seen);
+                      if(found) return found;
+                    }
+                  }
+                }
+              }catch(e){/* ignore errors */}
+              return '';
+            }
+
+            const brandKeys = [/thuong.?hieu/i, /brand/i, /vendor|maker|manufacturer/i];
+            const materialKeys = [/chat.?lieu/i, /material/i, /fabric|vat.?lieu/i];
+            const sampleRaw = (variants && variants[0] && variants[0].raw) || {};
+            const brand = (product && findFieldRecursive(product, brandKeys)) || findFieldRecursive(sampleRaw, brandKeys) || '';
+            const material = (product && findFieldRecursive(product, materialKeys)) || findFieldRecursive(sampleRaw, materialKeys) || '';
+            const description = (product && (product.moTa || product.description)) || ((variants[0] && (variants[0].raw?.moTa || variants[0].raw?.description)) || '');
+
+            // compute price range
+            const prices = variants.map(v => (v && v.price) ? Number(v.price) : null).filter(Boolean);
+            const minPrice = prices.length? Math.min(...prices): null;
+            const maxPrice = prices.length? Math.max(...prices): null;
+
+            // unique colors and sizes (preserve order)
+            const colors = [];
+            const sizes = [];
+            variants.forEach(v => {
+              if(v.color && !colors.includes(v.color)) colors.push(v.color);
+              if(v.size && !sizes.includes(v.size)) sizes.push(v.size);
+            });
+
+            // total stock (sum of variant stock values)
+            const totalStock = variants.reduce((s,v)=> s + (Number(v.stock) || 0), 0);
+
+            // build layout
+            mainEl.innerHTML = '';
+            const section = document.createElement('section');
+            section.style.padding = '20px 0';
+            const wrapper = document.createElement('div'); wrapper.style.display = 'flex'; wrapper.style.gap = '24px'; wrapper.style.alignItems='flex-start';
+
+            // left column (image)
+            const left = document.createElement('div'); left.style.flex = '1 1 48%';
+            const mainImg = document.createElement('img'); mainImg.src = (variants[0] && variants[0].image) || '/uploads/images/client1.jpg'; mainImg.style.width='100%'; mainImg.style.maxWidth='640px'; mainImg.style.objectFit='contain'; mainImg.style.border='1px solid #f3f3f3'; mainImg.style.background='#fff'; mainImg.style.padding='12px';
+            left.appendChild(mainImg);
+            // thumbnails
+            const thumbRow = document.createElement('div'); thumbRow.style.display='flex'; thumbRow.style.gap='8px'; thumbRow.style.marginTop='12px';
+            variants.forEach(v => {
+              if(!v.image) return;
+              const t = document.createElement('img'); t.src = v.image; t.style.width='72px'; t.style.height='72px'; t.style.objectFit='cover'; t.style.cursor='pointer'; t.style.border='1px solid #eee'; t.style.borderRadius='6px';
+              t.addEventListener('click', ()=> mainImg.src = v.image);
+              thumbRow.appendChild(t);
+            });
+            left.appendChild(thumbRow);
+
+            // right column (details)
+            const right = document.createElement('div'); right.style.flex = '1 1 48%'; right.style.minWidth='320px';
+            // breadcrumb
+            const bc = document.createElement('div'); bc.style.fontSize='13px'; bc.style.color='var(--muted)'; bc.style.marginBottom='8px'; bc.textContent = 'Trang chủ / Sản phẩm / ' + title;
+            right.appendChild(bc);
+            const h = document.createElement('h2'); h.textContent = title; h.style.margin='0 0 8px 0'; h.style.fontSize='1.8rem'; h.style.lineHeight='1.1'; right.appendChild(h);
+            // meta row: show Brand and Material under title, inline and muted
+            const metaRow = document.createElement('div'); metaRow.style.display = 'flex'; metaRow.style.flexWrap = 'wrap'; metaRow.style.gap = '18px'; metaRow.style.marginBottom = '8px'; metaRow.style.fontSize = '13px'; metaRow.style.color = 'var(--muted)';
+            const bEl = document.createElement('div');
+            const bLabel = document.createElement('strong'); bLabel.textContent = 'Thương hiệu:'; bLabel.style.fontWeight = '700'; bLabel.style.marginRight = '6px';
+            bEl.appendChild(bLabel);
+            bEl.appendChild(document.createTextNode((brand && String(brand).trim().length) ? brand : '—'));
+            metaRow.appendChild(bEl);
+            const mEl = document.createElement('div');
+            const mLabel = document.createElement('strong'); mLabel.textContent = 'Chất liệu:'; mLabel.style.fontWeight = '700'; mLabel.style.marginRight = '6px';
+            mEl.appendChild(mLabel);
+            mEl.appendChild(document.createTextNode((material && String(material).trim().length) ? material : '—'));
+            metaRow.appendChild(mEl);
+            right.appendChild(metaRow);
+            // quick debug: log extracted values so you can check browser console
+            try{ console.debug('Product meta extracted:', { brand, material, title, productSample: product || (variants[0] && variants[0].raw) }); }catch(e){/* ignore */}
+            // If both brand and material are missing, fetch product summaries as a visible fallback for diagnosis
+            if((!brand || !String(brand).trim()) && (!material || !String(material).trim())){
+              (async function(){
+                try{
+                  const fallback = await fetch(API_BASE + '/api/products');
+                  if(fallback && fallback.ok){
+                    const list = await fallback.json();
+                    const found = Array.isArray(list) ? list.find(p=> p && (p.id === Number(productId) || String(p.id) === String(productId))) : null;
+                    if(found){
+                      const diag = document.createElement('div'); diag.style.marginTop='8px'; diag.style.padding='8px'; diag.style.background='#fff9f0'; diag.style.border='1px solid #fde68a'; diag.style.borderRadius='6px'; diag.style.color='#92400e'; diag.style.fontSize='13px';
+                      diag.innerHTML = '<strong>Nguồn dữ liệu (tạm):</strong><br><small style="color:#6b7280">' + JSON.stringify(found, null, 2) + '</small>';
+                      right.appendChild(diag);
+                    }
+                  }
+                }catch(e){ console.warn('Fallback product summary fetch failed', e); }
+              })();
+            }
+
+            // price
+            const priceWrap = document.createElement('div'); priceWrap.style.margin='10px 0 8px 0';
+            const priceEl = document.createElement('div'); priceEl.style.fontSize='1.5rem'; priceEl.style.fontWeight='800'; priceEl.style.color='var(--orange)';
+            if(minPrice==null && maxPrice==null) priceEl.textContent = 'Liên hệ';
+            else if(minPrice!=null && maxPrice!=null && minPrice===maxPrice) priceEl.textContent = formatVnd(minPrice);
+            else priceEl.textContent = formatVnd(minPrice) + ' - ' + formatVnd(maxPrice);
+            priceWrap.appendChild(priceEl);
+            right.appendChild(priceWrap);
+
+            // stock display (created now, appended with qty controls later)
+            const stockEl = document.createElement('div'); stockEl.style.color = totalStock>0 ? '#111' : '#b91c1c'; stockEl.style.fontWeight='700'; stockEl.textContent = 'SỐ LƯỢNG: ' + totalStock;
+
+            // selected state
+            let selectedColor = null;
+            let selectedSize = null;
+            let selectedVariant = null;
+
+            function findMatchingVariant(){
+              return variants.find(v => {
+                if(selectedColor && v.color !== selectedColor) return false;
+                if(selectedSize && v.size !== selectedSize) return false;
+                return true;
+              }) || variants[0] || null;
+            }
+
+            function applyVariant(v){
+              if(!v) return;
+              selectedVariant = v;
+              if(v.image) mainImg.src = v.image;
+              if(v.price!=null) priceEl.textContent = formatVnd(v.price);
+              stockEl.textContent = 'SỐ LƯỢNG: ' + (v.stock != null ? v.stock : totalStock);
+              // disable add if no stock
+              addBtn.disabled = !(Number(v.stock) > 0);
+              addBtn.style.opacity = addBtn.disabled ? '0.6' : '1';
+            }
+
+            // color swatches
+            if(colors.length){
+              const clrWrap = document.createElement('div'); clrWrap.style.display='flex'; clrWrap.style.alignItems='center'; clrWrap.style.gap='12px'; clrWrap.style.marginBottom='12px';
+              const lbl = document.createElement('div'); lbl.textContent='Màu sắc:'; lbl.style.minWidth='72px'; lbl.style.color='var(--muted)'; clrWrap.appendChild(lbl);
+              colors.forEach(c => {
+                const btn = document.createElement('button'); btn.className='color-swatch'; btn.style.width='28px'; btn.style.height='28px'; btn.style.borderRadius='999px'; btn.style.border='1px solid #ddd'; btn.style.cursor='pointer'; btn.title = c;
+                // retrieve hex from raw variant if available (maMau)
+                const hex = variants.find(v=> (v.color === c) && (v.raw && (v.raw.maMau || v.raw.maMau)))?.raw?.maMau || null;
+                // visual: if hex looks valid use as background; otherwise show label
+                if(hex && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)){
+                  btn.style.background = hex;
+                } else if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c)){
+                  btn.style.background = c;
+                } else {
+                  btn.style.background = '#fff'; btn.textContent = c.length>10 ? c.substring(0,10) : c; btn.style.fontSize='11px';
+                }
+                const label = document.createElement('span'); label.style.marginLeft='8px'; label.style.color='var(--muted)'; label.style.fontSize='13px'; label.textContent = c;
+                const wrap = document.createElement('span'); wrap.style.display='inline-flex'; wrap.style.alignItems='center'; wrap.style.gap='8px'; wrap.appendChild(btn); wrap.appendChild(label);
+                btn.addEventListener('click', ()=>{
+                  selectedColor = c;
+                  // highlight
+                  document.querySelectorAll('.color-swatch').forEach(x=>x.style.outline=''); btn.style.outline='2px solid #111';
+                  const v = findMatchingVariant(); if(v) applyVariant(v);
+                });
+                clrWrap.appendChild(wrap);
+              });
+              right.appendChild(clrWrap);
+            }
+
+            // sizes
+            if(sizes.length){
+              const sizeWrap = document.createElement('div'); sizeWrap.style.display='flex'; sizeWrap.style.alignItems='center'; sizeWrap.style.gap='12px'; sizeWrap.style.marginBottom='12px';
+              const lbl2 = document.createElement('div'); lbl2.textContent='Kích cỡ:'; lbl2.style.minWidth='72px'; lbl2.style.color='var(--muted)'; sizeWrap.appendChild(lbl2);
+              sizes.forEach(sz => {
+                const b = document.createElement('button'); b.textContent = sz; b.className='size-btn'; b.style.padding='8px 12px'; b.style.border='1px solid #e6e6e6'; b.style.borderRadius='6px'; b.style.cursor='pointer';
+                b.addEventListener('click', ()=>{
+                  selectedSize = sz;
+                  document.querySelectorAll('.size-btn').forEach(x=>{ x.style.background=''; x.style.color=''; }); b.style.background='#111'; b.style.color='#fff';
+                  const v = findMatchingVariant(); if(v) applyVariant(v);
+                });
+                sizeWrap.appendChild(b);
+              });
+              right.appendChild(sizeWrap);
+            }
+
+            // quantity + actions: show stock next to quantity controls, buttons below
+            const minus = document.createElement('button'); minus.textContent='−'; minus.style.padding='0'; minus.style.width='36px'; minus.style.height='36px'; minus.style.display='inline-flex'; minus.style.alignItems='center'; minus.style.justifyContent='center'; minus.style.border='1px solid #e6e6e6'; minus.style.borderRadius='6px'; minus.style.background='#fff'; minus.style.cursor='pointer';
+            const qtyInput = document.createElement('input'); qtyInput.type='number'; qtyInput.value='1'; qtyInput.min='1'; qtyInput.style.width='56px'; qtyInput.style.textAlign='center'; qtyInput.style.padding='8px 6px'; qtyInput.style.border='1px solid #eee'; qtyInput.style.borderRadius='6px';
+            const plus = document.createElement('button'); plus.textContent='+'; plus.style.padding='0'; plus.style.width='36px'; plus.style.height='36px'; plus.style.display='inline-flex'; plus.style.alignItems='center'; plus.style.justifyContent='center'; plus.style.border='1px solid #e6e6e6'; plus.style.borderRadius='6px'; plus.style.background='#fff'; plus.style.cursor='pointer';
+            minus.addEventListener('click', ()=>{ let v = Number(qtyInput.value)||1; if(v>1) qtyInput.value = String(v-1); });
+            plus.addEventListener('click', ()=>{ let v = Number(qtyInput.value)||1; qtyInput.value = String(v+1); });
+
+            const qtyWrap = document.createElement('div'); qtyWrap.style.display='flex'; qtyWrap.style.alignItems='center'; qtyWrap.style.gap='8px'; qtyWrap.appendChild(minus); qtyWrap.appendChild(qtyInput); qtyWrap.appendChild(plus);
+
+            const addBtn = document.createElement('button'); addBtn.textContent='THÊM VÀO GIỎ HÀNG'; addBtn.style.background='#111'; addBtn.style.color='#fff'; addBtn.style.padding='12px 14px'; addBtn.style.border='0'; addBtn.style.borderRadius='8px'; addBtn.style.cursor='pointer'; addBtn.style.flex='1'; addBtn.style.minWidth='160px';
+            const buyBtn = document.createElement('button'); buyBtn.textContent='MUA NGAY'; buyBtn.style.background='var(--orange)'; buyBtn.style.color='#fff'; buyBtn.style.padding='12px 14px'; buyBtn.style.border='0'; buyBtn.style.borderRadius='8px'; buyBtn.style.cursor='pointer'; buyBtn.style.flex='0 0 140px';
+            addBtn.addEventListener('click', ()=>{
+              const qty = Math.max(1, Number(qtyInput.value)||1);
+              const v = findMatchingVariant() || {};
+              const item = {
+                productId: productId,
+                variantId: v.id || v.variantId || null,
+                sku: v.sku || v.maVariant || null,
+                title: product.tenSanPham || product.name || '',
+                price: Number(v.price || v.gia || 0),
+                image: v.image || v.anhUrl || '',
+                color: selectedColor || null,
+                size: selectedSize || null,
+                qty: qty,
+                stock: Number(v.stock || v.soLuong || 0)
+              };
+              const res = window.addToCart(item);
+              if(res && res.success){ showToast('Đã thêm vào giỏ hàng'); } else { showToast(res && res.message ? res.message : 'Không thể thêm vào giỏ'); }
+            });
+            buyBtn.addEventListener('click', ()=>{
+              // build an order object from current selection and navigate to checkout
+              const qty = Math.max(1, Number(qtyInput.value)||1);
+              const v = findMatchingVariant() || {};
+              const order = {
+                productId: productId,
+                variant: v,
+                qty: qty,
+                title: product.tenSanPham || product.name || '',
+                price: Number(v.price || v.gia || 0),
+                image: v.image || v.anhUrl || '',
+                color: selectedColor || null,
+                size: selectedSize || null
+              };
+              // if not logged in, redirect to login page first
+              const user = (function(){ try{ return JSON.parse(localStorage.getItem('bagistore_user')||'null'); }catch(e){ return null; } })();
+              if(!user){ window.location.href = '/client/login.html'; return; }
+              if(window.renderCheckout) window.renderCheckout(order, true);
+            });
+
+            const stockQtyRow = document.createElement('div'); stockQtyRow.style.display='flex'; stockQtyRow.style.alignItems='center'; stockQtyRow.style.gap='12px'; stockQtyRow.style.marginTop='8px'; stockQtyRow.appendChild(stockEl); stockQtyRow.appendChild(qtyWrap);
+
+            const buttonsRow = document.createElement('div'); buttonsRow.style.display='flex'; buttonsRow.style.gap='12px'; buttonsRow.style.marginTop='12px'; buttonsRow.appendChild(addBtn); buttonsRow.appendChild(buyBtn);
+
+            const actions = document.createElement('div'); actions.style.display='flex'; actions.style.flexDirection='column'; actions.style.alignItems='flex-start'; actions.style.marginTop='18px';
+            actions.appendChild(stockQtyRow); actions.appendChild(buttonsRow);
+            right.appendChild(actions);
+
+            // description
+            const desc = document.createElement('details'); desc.style.marginTop='18px'; const summ = document.createElement('summary'); summ.textContent='Mô tả sản phẩm'; summ.style.cursor='pointer'; summ.style.fontWeight='700'; summ.style.marginBottom='8px'; desc.appendChild(summ);
+            const pdesc = document.createElement('div'); pdesc.style.padding='12px 0'; pdesc.style.color='var(--muted)'; pdesc.innerHTML = description || 'Không có mô tả.'; desc.appendChild(pdesc);
+            right.appendChild(desc);
+
+            // (debug panel removed)
+
+            wrapper.appendChild(left); wrapper.appendChild(right); section.appendChild(wrapper); mainEl.appendChild(section);
+
+            // apply initial variant
+            const initVariant = findMatchingVariant(); if(initVariant) applyVariant(initVariant);
+
+            if(pushState) history.pushState({page:'product', id: productId}, '', '/client/product/' + productId);
+            (function(){ const links = document.querySelectorAll('nav.main-nav a'); links.forEach(a=>a.classList.remove('active')); })();
+            // expose globally for other handlers
+            window.currentProduct = { id: productId, product, variants };
+          }catch(err){ console.error('Failed to load product detail', err); mainEl.innerHTML = '<div style="padding:24px;color:#b91c1c">Lỗi khi tải chi tiết sản phẩm.</div>'; }
+        }
+
+        // expose to global scope so home renderGrid can call it
+        window.renderProductDetail = async function(productId, pushState){ return renderProductDetail(productId, pushState); };
+
+        // Render checkout / payment info page
+        window.renderCheckout = async function(order, pushState = true){
+          const mainEl = document.getElementById('mainContent');
+          if(!mainEl) return;
+          // require user
+          let user = null;
+          try{ user = JSON.parse(localStorage.getItem('bagistore_user')||'null'); }catch(e){ user = null; }
+          if(!user){ window.location.href = '/client/login.html'; return; }
+
+          // simple layout: left form, right summary
+          mainEl.innerHTML = '';
+          const section = document.createElement('section'); section.style.padding = '20px 0';
+          const title = document.createElement('div'); title.className='section-title'; title.innerHTML = '<h3>Thông tin thanh toán</h3>'; section.appendChild(title);
+
+          const wrapper = document.createElement('div'); wrapper.className = 'checkout-wrapper'; wrapper.style.display='flex'; wrapper.style.gap='12px'; wrapper.style.alignItems='flex-start';
+          // left: form
+          const left = document.createElement('div'); left.className = 'checkout-left'; left.style.flex='1'; left.style.minWidth='280px'; left.style.maxWidth='900px';
+          const form = document.createElement('div'); form.className = 'checkout-form'; form.style.background='#fff'; form.style.padding='14px'; form.style.border='1px solid #f3f4f4'; form.style.borderRadius='8px';
+
+          // name (label above each input)
+          const labelRow = document.createElement('div'); labelRow.style.display='flex'; labelRow.style.gap='12px';
+          const nameLabel = document.createElement('div'); nameLabel.textContent='* Họ và tên'; nameLabel.style.flex='1'; nameLabel.style.fontWeight='700'; nameLabel.style.marginBottom='6px';
+          const phoneLabel = document.createElement('div'); phoneLabel.textContent='* Số điện thoại'; phoneLabel.style.width='220px'; phoneLabel.style.fontWeight='700'; phoneLabel.style.marginBottom='6px';
+          labelRow.appendChild(nameLabel); labelRow.appendChild(phoneLabel); form.appendChild(labelRow);
+          const nameRow = document.createElement('div'); nameRow.style.display='flex'; nameRow.style.gap='12px';
+          const nameField = document.createElement('input'); nameField.type='text'; nameField.placeholder='Họ và tên'; nameField.style.flex='1'; nameField.value = user.hoTen || user.name || ''; nameField.style.padding='10px'; nameRow.appendChild(nameField);
+          const phoneField = document.createElement('input'); phoneField.type='text'; phoneField.placeholder='Số điện thoại'; phoneField.style.width='220px'; phoneField.value = user.soDienThoai || user.phone || ''; phoneField.style.padding='10px'; nameRow.appendChild(phoneField);
+          form.appendChild(nameRow);
+
+          // addresses selector
+          const addrLabel = document.createElement('div'); addrLabel.textContent='Địa chỉ giao hàng'; addrLabel.style.marginTop='12px'; addrLabel.style.fontWeight='700'; form.appendChild(addrLabel);
+          const addrSelect = document.createElement('select'); addrSelect.style.width='100%'; addrSelect.style.padding='10px'; addrSelect.style.marginTop='8px';
+          const addresses = Array.isArray(user.diaChiKhachHangs) ? user.diaChiKhachHangs : [];
+          if(addresses.length===0){ const opt = document.createElement('option'); opt.textContent = 'Không có địa chỉ nào, vui lòng nhập'; opt.value=''; addrSelect.appendChild(opt); }
+          addresses.forEach((a,i)=>{ const opt = document.createElement('option'); opt.value = String(i); const parts = []; if(a.diaChiCuThe) parts.push(a.diaChiCuThe); if(a.xaPhuong) parts.push(a.xaPhuong); if(a.quanHuyen) parts.push(a.quanHuyen); if(a.thanhPhoTinh) parts.push(a.thanhPhoTinh); opt.textContent = parts.join(', '); addrSelect.appendChild(opt); });
+          form.appendChild(addrSelect);
+
+          // address detail input
+          const addrDetailLabel = document.createElement('div'); addrDetailLabel.textContent='* Địa chỉ cụ thể'; addrDetailLabel.style.marginTop='8px'; addrDetailLabel.style.fontWeight='700'; form.appendChild(addrDetailLabel);
+          const addrDetail = document.createElement('input'); addrDetail.type='text'; addrDetail.placeholder='Địa chỉ cụ thể'; addrDetail.style.width='100%'; addrDetail.style.padding='10px'; addrDetail.style.marginTop='6px'; if(addresses[0] && addresses[0].diaChiCuThe) addrDetail.value = addresses[0].diaChiCuThe; form.appendChild(addrDetail);
+
+          // city/district/ward (prefill if address present)
+          const cdLabelRow = document.createElement('div'); cdLabelRow.style.display='flex'; cdLabelRow.style.gap='8px'; cdLabelRow.style.marginTop='8px';
+          const cityLabel = document.createElement('div'); cityLabel.textContent='* Tỉnh/Thành phố'; cityLabel.style.flex='1'; cityLabel.style.fontWeight='700';
+          const districtLabel = document.createElement('div'); districtLabel.textContent='* Quận/Huyện'; districtLabel.style.flex='1'; districtLabel.style.fontWeight='700';
+          const wardLabelSmall = document.createElement('div'); wardLabelSmall.textContent='* Xã/Thị trấn'; wardLabelSmall.style.flex='1'; wardLabelSmall.style.fontWeight='700';
+          cdLabelRow.appendChild(cityLabel); cdLabelRow.appendChild(districtLabel); cdLabelRow.appendChild(wardLabelSmall); form.appendChild(cdLabelRow);
+          const rowCD = document.createElement('div'); rowCD.style.display='flex'; rowCD.style.gap='8px'; rowCD.style.marginTop='6px';
+          const city = document.createElement('input'); city.type='text'; city.placeholder='Tỉnh/Thành phố'; city.style.flex='1'; city.style.padding='8px'; city.value = (addresses[0] && addresses[0].thanhPhoTinh) || '';
+          const district = document.createElement('input'); district.type='text'; district.placeholder='Quận/Huyện'; district.style.flex='1'; district.style.padding='8px'; district.value = (addresses[0] && addresses[0].quanHuyen) || '';
+          const ward = document.createElement('input'); ward.type='text'; ward.placeholder='Xã/Thị trấn'; ward.style.flex='1'; ward.style.padding='8px'; ward.value = (addresses[0] && addresses[0].xaPhuong) || '';
+          rowCD.appendChild(city); rowCD.appendChild(district); rowCD.appendChild(ward); form.appendChild(rowCD);
+
+          // notes
+          const noteLabel = document.createElement('div'); noteLabel.textContent='Ghi chú (tùy chọn)'; noteLabel.style.marginTop='10px'; noteLabel.style.fontWeight='700'; form.appendChild(noteLabel);
+          const note = document.createElement('textarea'); note.placeholder='Ghi chú (tùy chọn)'; note.style.width='100%'; note.style.padding='10px'; note.style.marginTop='6px'; form.appendChild(note);
+
+          // coupon input - fetch active coupons from backend and allow applying
+          const couponWrap = document.createElement('div'); couponWrap.style.marginTop='12px';
+          const couponLabel = document.createElement('div'); couponLabel.textContent='Phiếu giảm giá'; couponLabel.style.fontWeight='700'; couponWrap.appendChild(couponLabel);
+          const couponRow = document.createElement('div'); couponRow.style.display='flex'; couponRow.style.gap='8px'; couponRow.style.marginTop='8px';
+          const couponInput = document.createElement('input'); couponInput.type='text'; couponInput.placeholder='Mã phiếu giảm giá'; couponInput.style.flex='1'; couponInput.style.padding='8px';
+          const couponBtn = document.createElement('button'); couponBtn.textContent='CHỌN'; couponBtn.style.padding='8px 12px'; couponBtn.style.background='#000'; couponBtn.style.color='#fff'; couponBtn.style.border='0'; couponBtn.style.cursor='pointer';
+          couponRow.appendChild(couponInput); couponRow.appendChild(couponBtn); couponWrap.appendChild(couponRow);
+          const couponHelper = document.createElement('div'); couponHelper.style.fontSize='13px'; couponHelper.style.color='#6b7280'; couponHelper.style.marginTop='6px'; couponWrap.appendChild(couponHelper);
+          form.appendChild(couponWrap);
+
+          // load coupons
+          let coupons = [];
+          try{
+            const cres = await fetch(API_BASE + '/api/discounts');
+            if(cres.ok) coupons = await cres.json();
+          }catch(e){ console.warn('Failed to load coupons', e); }
+
+          // helper to find coupon by code or name
+          function findCouponByCode(code){ if(!code) return null; const c = coupons.find(x=> (x.maPhieu && String(x.maPhieu).toLowerCase()===String(code).toLowerCase()) || (x.tenPhieu && String(x.tenPhieu).toLowerCase()===String(code).toLowerCase())); return c || null; }
+
+          let appliedCoupon = null; let discountAmount = 0;
+
+          couponBtn.onclick = function(){
+            const code = couponInput.value && couponInput.value.trim();
+            if(!code){ couponHelper.textContent = 'Vui lòng nhập mã phiếu giảm giá.'; return; }
+            const found = findCouponByCode(code);
+            if(!found){ couponHelper.textContent = 'Không tìm thấy phiếu hợp lệ.'; return; }
+            // validate status
+            if(!found.trangThai || !String(found.trangThai).toLowerCase().includes('đang')){ couponHelper.textContent = 'Phiếu không đang diễn ra.'; return; }
+            // validate minimum order
+            const sub = (Number(order.price||0) * Number(order.qty||1)) || 0;
+            if(found.hoaDonToiThieu && sub < Number(found.hoaDonToiThieu)){ couponHelper.textContent = 'Đơn hàng chưa đạt điều kiện áp dụng.'; return; }
+            // compute discount
+            let disc = 0;
+            const loai = found.loaiPhieu ? String(found.loaiPhieu).toLowerCase() : '';
+            if(loai.includes('phần') || loai.includes('%') || loai.includes('percent')){
+              disc = Math.round(sub * (Number(found.giaTriGiamGia||0) / 100.0));
+              if(found.soTienToiDa) disc = Math.min(disc, Number(found.soTienToiDa));
+            } else {
+              disc = Number(found.giaTriGiamGia||0);
+              if(found.soTienToiDa) disc = Math.min(disc, Number(found.soTienToiDa));
+            }
+            appliedCoupon = found; discountAmount = disc;
+            couponHelper.textContent = 'Áp dụng: ' + (found.tenPhieu || found.maPhieu) + ' — Tiết kiệm ' + formatVnd(discountAmount);
+            // update price display if already rendered
+            try{ if(typeof refreshPriceSummary === 'function') refreshPriceSummary(); }catch(e){}
+          };
+
+          // payment methods
+          const payLabel = document.createElement('div'); payLabel.textContent='Phương thức thanh toán'; payLabel.style.fontWeight='700'; payLabel.style.marginTop='12px'; form.appendChild(payLabel);
+          const payWrap = document.createElement('div'); payWrap.style.display='flex'; payWrap.style.gap='12px'; payWrap.style.marginTop='8px';
+          const cod = document.createElement('label'); cod.style.display='flex'; cod.style.alignItems='center'; cod.style.gap='8px'; const r1 = document.createElement('input'); r1.type='radio'; r1.name='pay'; r1.checked=true; cod.appendChild(r1); const span1 = document.createElement('span'); span1.textContent='Thanh toán khi nhận hàng'; cod.appendChild(span1);
+          const vnpay = document.createElement('label'); vnpay.style.display='flex'; vnpay.style.alignItems='center'; vnpay.style.gap='8px'; const r2 = document.createElement('input'); r2.type='radio'; r2.name='pay'; vnpay.appendChild(r2); const span2 = document.createElement('span'); span2.textContent='Thanh toán ngay (VNPay)'; vnpay.appendChild(span2);
+          payWrap.appendChild(cod); payWrap.appendChild(vnpay); form.appendChild(payWrap);
+
+          // submit button
+          const submit = document.createElement('button'); submit.textContent='HOÀN THÀNH ĐẶT HÀNG'; submit.className='btn checkout-submit'; submit.style.marginTop='12px'; submit.onclick = async function(){
+            // if VNPay selected, currently not implemented in demo
+            if(r2 && r2.checked){ showToast('Chức năng thanh toán VNPay chưa được hỗ trợ.'); return; }
+            // prepare invoice payload for backend
+            const subtotal = (Number(order.price||0) * Number(order.qty||1)) || 0;
+            const shipping = 34000;
+            const total = subtotal + shipping;
+            const items = [];
+            const variantId = order.variant && (order.variant.id || order.variant.variantId) ? (order.variant.id || order.variant.variantId) : null;
+            items.push({ variantId: variantId, soLuong: order.qty || 1, donGia: order.price || 0.0, moTa: order.title });
+
+            const invoicePayload = {
+              customerId: user.id || null,
+              customerName: nameField.value || (user.hoTen || user.name),
+              customerPhone: phoneField.value || user.soDienThoai,
+              customerEmail: user.email || null,
+              loaiHoaDon: 'online',
+              ghiChu: note.value || '',
+              isPickup: false,
+              tongTien: total,
+              tongTienSauGiam: total,
+              phuongThucId: null,
+              phieuGiamGiaId: null,
+              items: items
+            };
+
+            // try to POST to backend invoices endpoint
+            const token = localStorage.getItem('bagistore_token');
+            try{
+              const res = await fetch(API_BASE + '/api/invoices', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                },
+                body: JSON.stringify(invoicePayload)
+              });
+              if(!res.ok){
+                const txt = await res.text();
+                console.error('Invoice create failed', res.status, txt);
+                showToast('Lỗi khi tạo đơn hàng: ' + (res.statusText || res.status));
+                return;
+              }
+              const created = await res.json();
+              // Clear cart and show success area with return-home button
+              try{ localStorage.removeItem('bagistore_cart'); updateCartCount(); }catch(e){}
+
+              // replace main content area with success message and button
+              mainEl.innerHTML = '';
+              const successSec = document.createElement('section'); successSec.style.padding = '40px 0';
+              const box = document.createElement('div'); box.style.maxWidth='760px'; box.style.margin='0 auto'; box.style.textAlign='center';
+              const h = document.createElement('h2'); h.textContent = 'Đặt hàng thành công'; h.style.color = 'var(--orange)'; h.style.marginBottom='12px'; box.appendChild(h);
+              const p = document.createElement('div'); p.textContent = 'Mã đơn: ' + (created.maHoaDon || created.id || '—') ; p.style.marginBottom='12px'; box.appendChild(p);
+              const noteMsg = document.createElement('div'); noteMsg.textContent = 'Cảm ơn bạn, đơn hàng đã được lưu. Nhân viên sẽ liên hệ để xác nhận.'; noteMsg.style.marginBottom='18px'; box.appendChild(noteMsg);
+              const homeBtn = document.createElement('button'); homeBtn.textContent = 'Quay về trang chủ'; homeBtn.className='btn'; homeBtn.onclick = function(){ window.location.href = '/client'; }; box.appendChild(homeBtn);
+              successSec.appendChild(box); mainEl.appendChild(successSec);
+              // show small toast as well
+              showToast('Đặt hàng thành công');
+            }catch(err){ console.error(err); showToast('Lỗi khi tạo đơn hàng'); }
+          };
+          form.appendChild(submit);
+
+          left.appendChild(form);
+
+          // right: order summary
+          const right = document.createElement('div'); right.className = 'checkout-right'; right.style.width='360px';
+          const sumCard = document.createElement('div'); sumCard.className = 'checkout-summary'; sumCard.style.border='1px solid #f3f4f6'; sumCard.style.padding='14px'; sumCard.style.borderRadius='8px';
+          const itemRow = document.createElement('div'); itemRow.style.display='flex'; itemRow.style.gap='12px';
+          const thumb = document.createElement('img'); thumb.src = order.image || '/uploads/images/client1.jpg'; thumb.style.width='96px'; thumb.style.height='96px'; thumb.style.objectFit='contain'; itemRow.appendChild(thumb);
+          const meta = document.createElement('div'); meta.style.flex='1'; const t = document.createElement('div'); t.style.fontWeight='700'; t.textContent = order.title; meta.appendChild(t); const opt = document.createElement('div'); opt.style.color='#6b7280'; opt.style.marginTop='6px'; opt.textContent = (order.size?('size: '+order.size+' '):'') + (order.color?('color: '+order.color):''); meta.appendChild(opt); const qtyLine = document.createElement('div'); qtyLine.style.marginTop='8px'; qtyLine.textContent = 'Số lượng: ' + order.qty; meta.appendChild(qtyLine); itemRow.appendChild(meta);
+          sumCard.appendChild(itemRow);
+
+          const hr = document.createElement('div'); hr.style.height='1px'; hr.style.background='#f3f4f6'; hr.style.margin='12px 0'; sumCard.appendChild(hr);
+          const subtotal = (Number(order.price||0) * Number(order.qty||1)) || 0;
+          const shipping = 34000;
+          // discountAmount and appliedCoupon may be set via coupon UI
+          if(typeof discountAmount === 'undefined') discountAmount = 0;
+          const priceList = document.createElement('div'); priceList.style.display='flex'; priceList.style.flexDirection='column'; priceList.style.gap='8px';
+          function buildPriceList(){
+            priceList.innerHTML = '';
+            const p1 = document.createElement('div'); p1.style.display='flex'; p1.style.justifyContent='space-between'; p1.innerHTML = '<div>Tạm tính</div><div>'+ formatVnd(subtotal) +'</div>'; priceList.appendChild(p1);
+            const p2 = document.createElement('div'); p2.style.display='flex'; p2.style.justifyContent='space-between'; p2.innerHTML = '<div>Phí vận chuyển</div><div>'+ formatVnd(shipping) +'</div>'; priceList.appendChild(p2);
+            const pdisc = document.createElement('div'); pdisc.style.display='flex'; pdisc.style.justifyContent='space-between'; pdisc.innerHTML = '<div>Giảm giá</div><div>'+ (discountAmount?('- ' + formatVnd(discountAmount)) : formatVnd(0)) +'</div>'; priceList.appendChild(pdisc);
+            const total = Math.max(0, subtotal - (discountAmount||0) + shipping);
+            const p3 = document.createElement('div'); p3.style.display='flex'; p3.style.justifyContent='space-between'; p3.innerHTML = '<div><strong>Tổng số tiền</strong></div><div style="color:#ef4444;font-weight:800">'+ formatVnd(total) +'</div>'; priceList.appendChild(p3);
+          }
+          // expose a refresh hook for coupon apply handler
+          function refreshPriceSummary(){ buildPriceList(); }
+          buildPriceList();
+          sumCard.appendChild(priceList);
+          right.appendChild(sumCard);
+
+          wrapper.appendChild(left); wrapper.appendChild(right); section.appendChild(wrapper); mainEl.appendChild(section);
+          if(pushState) history.pushState({page:'checkout'}, '', '/client/checkout');
+        };
+
+        function renderHome(pushState = true){
+          // restore original main content and show the hero carousel again
+          mainEl.innerHTML = originalMainHtml;
+          const carouselEl = document.getElementById('heroCarousel');
+          if(carouselEl) carouselEl.style.display = '';
+          // re-run product population for home sections
+          if(window.renderHomeProducts) window.renderHomeProducts();
+          if(pushState) history.pushState({page:'home'}, '', '/client');
+          // update active nav
+          (function(){ const links = document.querySelectorAll('nav.main-nav a'); links.forEach(a=>a.classList.toggle('active', (a.getAttribute('href')||'').includes('index'))); })();
+        }
+
+        // attach click handlers
+        const navProducts = document.getElementById('nav-products');
+        const navHome = document.getElementById('nav-home');
+        if(navProducts) navProducts.addEventListener('click', function(e){ e.preventDefault(); renderProductsFull(true); });
+        if(navHome) navHome.addEventListener('click', function(e){ e.preventDefault(); renderHome(true); });
+
+        // handle back/forward
+        window.addEventListener('popstate', function(e){
+          const state = e.state || {};
+          if(state.page === 'products' || location.pathname.includes('products')) renderProductsFull(false);
+          else renderHome(false);
+        });
+
+        // if user landed on products path or hash, render products
+        if(location.pathname.includes('products') || location.hash === '#products') renderProductsFull(false);
+      })();
+
+  </script>
+</body>
+</html>
