@@ -18199,23 +18199,28 @@ function initializeCapacitiesPage() {
 
     // Compute display total for an invoice object using same rules as detail summary
     function computeInvoiceDisplayTotal(inv) {
-        // inv may already have items (with thanhTien) or only top-level totals
-        let subtotal = 0;
-        if (inv.items && Array.isArray(inv.items) && inv.items.length) {
-            inv.items.forEach(it => { subtotal += Number(it.thanhTien || (it.donGia || 0) * (it.soLuong || 0)); });
-        } else {
-            subtotal = Number(inv.tongTien || 0);
+        // Prefer server-stored final payable amount when available
+        try {
+            const recordedTotal = (inv && inv.tongTienSauGiam != null) ? Number(inv.tongTienSauGiam) : (inv && inv.tongTien != null ? Number(inv.tongTien) : null);
+            if (recordedTotal != null && isFinite(recordedTotal)) return Math.round(recordedTotal);
+
+            // otherwise compute from line items / explicit fields
+            let subtotal = 0;
+            if (inv && Array.isArray(inv.items) && inv.items.length) {
+                inv.items.forEach(it => { subtotal += Number(it.thanhTien ?? ((it.donGia || 0) * (it.soLuong || 0))); });
+            } else if (inv && inv.subtotal != null) {
+                subtotal = Number(inv.subtotal);
+            } else {
+                subtotal = 0;
+            }
+
+            const discount = inv && (inv.discountAmount != null) ? Number(inv.discountAmount) : 0;
+            const shippingFee = inv && (inv.shippingFee != null) ? Number(inv.shippingFee) : 0;
+            const total = subtotal - discount + shippingFee;
+            return Math.round(Math.max(0, total));
+        } catch (e) {
+            return 0;
         }
-        const discount = (inv.tongTien != null && inv.tongTienSauGiam != null) ? Math.max(0, inv.tongTien - inv.tongTienSauGiam) : 0;
-        const recordedTotal = (inv.tongTienSauGiam != null) ? inv.tongTienSauGiam : (inv.tongTien != null ? inv.tongTien : null);
-        let shippingFee = 0;
-        if (recordedTotal != null) {
-            shippingFee = recordedTotal - (subtotal - discount);
-            if (!isFinite(shippingFee)) shippingFee = 0;
-        }
-        shippingFee = Math.max(0, Math.round(shippingFee));
-        const total = subtotal - discount + shippingFee;
-        return total;
     }
 
     // Safely extract a human-readable name from a string or object

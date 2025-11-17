@@ -1018,42 +1018,107 @@
           const couponHelper = document.createElement('div'); couponHelper.style.fontSize='13px'; couponHelper.style.color='#6b7280'; couponHelper.style.marginTop='6px'; couponWrap.appendChild(couponHelper);
           form.appendChild(couponWrap);
 
-          // load coupons
+          // load coupons applicable to this order (ask backend for coupons eligible for the subtotal)
           let coupons = [];
           try{
-            const cres = await fetch(API_BASE + '/api/discounts');
-            if(cres.ok) coupons = await cres.json();
-          }catch(e){ console.warn('Failed to load coupons', e); }
+            const subtotal = (Number(order.price||0) * Number(order.qty||1)) || 0;
+            const token = localStorage.getItem('bagistore_token');
+            const cres = await fetch(API_BASE + '/api/discounts/applicable', {
+              method: 'POST',
+              headers: Object.assign({ 'Content-Type': 'application/json' }, (token ? { 'Authorization': 'Bearer ' + token } : {})),
+              body: JSON.stringify({ subtotal: subtotal, productId: order.productId || null, variantId: (order.variant && (order.variant.id || order.variant.variantId)) ? (order.variant.id || order.variant.variantId) : null })
+            });
+            if(cres.ok){ coupons = await cres.json(); }
+          }catch(e){ console.warn('Failed to load applicable coupons', e); }
+          console.debug('Applicable coupons loaded for modal', coupons);
 
           // helper to find coupon by code or name
           function findCouponByCode(code){ if(!code) return null; const c = coupons.find(x=> (x.maPhieu && String(x.maPhieu).toLowerCase()===String(code).toLowerCase()) || (x.tenPhieu && String(x.tenPhieu).toLowerCase()===String(code).toLowerCase())); return c || null; }
 
           let appliedCoupon = null; let discountAmount = 0;
 
-          couponBtn.onclick = function(){
-            const code = couponInput.value && couponInput.value.trim();
-            if(!code){ couponHelper.textContent = 'Vui lòng nhập mã phiếu giảm giá.'; return; }
-            const found = findCouponByCode(code);
-            if(!found){ couponHelper.textContent = 'Không tìm thấy phiếu hợp lệ.'; return; }
-            // validate status
-            if(!found.trangThai || !String(found.trangThai).toLowerCase().includes('đang')){ couponHelper.textContent = 'Phiếu không đang diễn ra.'; return; }
-            // validate minimum order
-            const sub = (Number(order.price||0) * Number(order.qty||1)) || 0;
-            if(found.hoaDonToiThieu && sub < Number(found.hoaDonToiThieu)){ couponHelper.textContent = 'Đơn hàng chưa đạt điều kiện áp dụng.'; return; }
-            // compute discount
-            let disc = 0;
-            const loai = found.loaiPhieu ? String(found.loaiPhieu).toLowerCase() : '';
-            if(loai.includes('phần') || loai.includes('%') || loai.includes('percent')){
-              disc = Math.round(sub * (Number(found.giaTriGiamGia||0) / 100.0));
-              if(found.soTienToiDa) disc = Math.min(disc, Number(found.soTienToiDa));
-            } else {
-              disc = Number(found.giaTriGiamGia||0);
-              if(found.soTienToiDa) disc = Math.min(disc, Number(found.soTienToiDa));
+          // show modal with active coupons for user to choose
+          function showCouponsModal(){
+            const overlay = document.createElement('div'); overlay.style.position='fixed'; overlay.style.inset='0'; overlay.style.background='rgba(0,0,0,0.4)'; overlay.style.display='flex'; overlay.style.alignItems='center'; overlay.style.justifyContent='center'; overlay.style.zIndex='9999';
+            const modal = document.createElement('div'); modal.style.width='720px'; modal.style.maxHeight='80vh'; modal.style.overflow='auto'; modal.style.background='#fff'; modal.style.borderRadius='8px'; modal.style.padding='16px';
+            const title = document.createElement('div'); title.textContent='Chọn phiếu giảm giá'; title.style.fontWeight='800'; title.style.marginBottom='8px'; modal.appendChild(title);
+            const list = document.createElement('div'); list.style.display='flex'; list.style.flexDirection='column'; list.style.gap='8px';
+            const now = new Date();
+            const allCoupons = Array.isArray(coupons) ? coupons : [];
+            const activeCoupons = allCoupons.filter(d => {
+              if(!d) return false;
+              const status = d.trangThai;
+              const statusStr = (status === null || status === undefined) ? '' : String(status).toLowerCase();
+              const okStatus = status === true || status === 1 || statusStr.includes('active') || statusStr.includes('đang') || statusStr.includes('true') || statusStr === '1' || statusStr.includes('enabled') || statusStr.includes('hiện');
+              if(!okStatus) return false;
+              try{
+                if(d.ngayBatDau && new Date(d.ngayBatDau) > now) return false;
+                if(d.ngayKetThu && new Date(d.ngayKetThu) < now) return false;
+              }catch(e){}
+              return true;
+            });
+
+            if(activeCoupons.length===0){
+              // No currently-active coupons: provide a helpful debug view listing all coupons returned by the server
+              const empty = document.createElement('div'); empty.textContent='Không có phiếu giảm giá đang diễn ra.'; empty.style.color='#6b7280'; list.appendChild(empty);
+              if(allCoupons.length > 0){
+                const info = document.createElement('div'); info.style.marginTop='10px'; info.style.fontSize='13px'; info.style.color='#6b7280'; info.textContent = 'Hiện tại server trả về ' + allCoupons.length + ' phiếu (hiển thị tạm):'; list.appendChild(info);
+                allCoupons.forEach(d => {
+                  const card = document.createElement('div'); card.style.display='flex'; card.style.alignItems='center'; card.style.justifyContent='space-between'; card.style.padding='8px'; card.style.border='1px dashed #f3f4f6'; card.style.borderRadius='6px'; card.style.marginTop='8px';
+                  const info2 = document.createElement('div'); info2.style.flex='1';
+                  const name = document.createElement('div'); name.style.fontWeight='700'; name.textContent = (d.tenPhieu || d.maPhieu || ('#' + (d.id||'')));
+                  const meta = document.createElement('div'); meta.style.color='#6b7280'; meta.style.fontSize='13px'; meta.textContent = (d.loaiPhieu?d.loaiPhieu + ' • ':'') + (d.giaTriGiamGia?('Giảm ' + d.giaTriGiamGia + (d.loaiPhieu && String(d.loaiPhieu).toLowerCase().includes('phần')? '%' : ' đ')) : '');
+                  const stat = document.createElement('div'); stat.style.fontSize='12px'; stat.style.color='#9ca3af'; stat.textContent = 'Trạng thái: ' + (d.trangThai === undefined ? '(undefined)' : String(d.trangThai));
+                  const dates = document.createElement('div'); dates.style.color='#9ca3af'; dates.style.fontSize='12px'; dates.textContent = (d.ngayBatDau?('Từ ' + d.ngayBatDau.split('T')[0] + ' ') : '') + (d.ngayKetThu?('đến ' + d.ngayKetThu.split('T')[0]) : '');
+                  info2.appendChild(name); info2.appendChild(meta); info2.appendChild(stat); info2.appendChild(dates);
+                  const actions2 = document.createElement('div'); actions2.style.marginLeft='12px';
+                  const applyBtn2 = document.createElement('button'); applyBtn2.textContent='Áp dụng'; applyBtn2.style.padding='6px 10px'; applyBtn2.style.background='#ddd'; applyBtn2.style.color='#666'; applyBtn2.style.border='0'; applyBtn2.style.cursor='not-allowed'; // disabled by default
+                  actions2.appendChild(applyBtn2);
+                  card.appendChild(info2); card.appendChild(actions2); list.appendChild(card);
+                });
+                const raw = document.createElement('pre'); raw.style.marginTop='10px'; raw.style.background='#fafafa'; raw.style.padding='8px'; raw.style.border='1px solid #f3f4f6'; raw.style.maxHeight='200px'; raw.style.overflow='auto'; raw.style.fontSize='12px'; raw.textContent = JSON.stringify(allCoupons, null, 2);
+                list.appendChild(raw);
+              }
             }
-            appliedCoupon = found; discountAmount = disc;
-            couponHelper.textContent = 'Áp dụng: ' + (found.tenPhieu || found.maPhieu) + ' — Tiết kiệm ' + formatVnd(discountAmount);
-            // update price display if already rendered
-            try{ if(typeof refreshPriceSummary === 'function') refreshPriceSummary(); }catch(e){}
+            // render truly active coupons as before
+            activeCoupons.forEach(d => {
+              const card = document.createElement('div'); card.style.display='flex'; card.style.alignItems='center'; card.style.justifyContent='space-between'; card.style.padding='10px'; card.style.border='1px solid #f3f4f6'; card.style.borderRadius='8px';
+              const info = document.createElement('div'); info.style.flex='1';
+              const name = document.createElement('div'); name.style.fontWeight='700'; name.textContent = (d.tenPhieu || d.maPhieu || ('#' + (d.id||'')));
+              const meta = document.createElement('div'); meta.style.color='#6b7280'; meta.style.fontSize='13px'; meta.textContent = (d.loaiPhieu?d.loaiPhieu + ' • ':'') + (d.giaTriGiamGia?('Giảm ' + d.giaTriGiamGia + (d.loaiPhieu && String(d.loaiPhieu).toLowerCase().includes('phần')? '%' : ' đ')) : '');
+              const dates = document.createElement('div'); dates.style.color='#9ca3af'; dates.style.fontSize='12px'; dates.textContent = (d.ngayBatDau?('Từ ' + d.ngayBatDau.split('T')[0] + ' ') : '') + (d.ngayKetThu?('đến ' + d.ngayKetThu.split('T')[0]) : '');
+              info.appendChild(name); info.appendChild(meta); info.appendChild(dates);
+              const actions = document.createElement('div'); actions.style.marginLeft='12px';
+              const applyBtn = document.createElement('button'); applyBtn.textContent='Áp dụng'; applyBtn.style.padding='8px 12px'; applyBtn.style.background='var(--orange)'; applyBtn.style.color='#fff'; applyBtn.style.border='0'; applyBtn.style.cursor='pointer';
+              applyBtn.onclick = function(e){
+                e.stopPropagation();
+                // mimic earlier validation & computation
+                const sub = (Number(order.price||0) * Number(order.qty||1)) || 0;
+                if(d.hoaDonToiThieu && sub < Number(d.hoaDonToiThieu)){ couponHelper.textContent = 'Đơn hàng chưa đạt điều kiện áp dụng.'; return; }
+                let disc = 0; const loai = d.loaiPhieu ? String(d.loaiPhieu).toLowerCase() : '';
+                if(loai.includes('phần') || loai.includes('%') || loai.includes('percent')){
+                  disc = Math.round(sub * (Number(d.giaTriGiamGia||0) / 100.0)); if(d.soTienToiDa) disc = Math.min(disc, Number(d.soTienToiDa));
+                } else { disc = Number(d.giaTriGiamGia||0); if(d.soTienToiDa) disc = Math.min(disc, Number(d.soTienToiDa)); }
+                appliedCoupon = d; discountAmount = disc; couponInput.value = d.maPhieu || d.tenPhieu || '';
+                couponHelper.textContent = 'Áp dụng: ' + (d.tenPhieu || d.maPhieu) + ' — Tiết kiệm ' + formatVnd(discountAmount);
+                try{ if(typeof refreshPriceSummary === 'function') refreshPriceSummary(); }catch(e){}
+                document.body.removeChild(overlay);
+              };
+              actions.appendChild(applyBtn);
+              card.appendChild(info); card.appendChild(actions); list.appendChild(card);
+            });
+            modal.appendChild(list);
+            const closeRow = document.createElement('div'); closeRow.style.textAlign='right'; closeRow.style.marginTop='12px';
+            const closeBtn = document.createElement('button'); closeBtn.textContent='Đóng'; closeBtn.style.padding='8px 12px'; closeBtn.style.border='1px solid #e6e6e6'; closeBtn.style.background='#fff'; closeBtn.onclick = function(){ document.body.removeChild(overlay); };
+            closeRow.appendChild(closeBtn); modal.appendChild(closeRow);
+            overlay.appendChild(modal);
+            overlay.onclick = function(evt){ if(evt.target === overlay){ document.body.removeChild(overlay); } };
+            document.body.appendChild(overlay);
+          }
+
+          couponBtn.onclick = function(){
+            // open modal to choose active coupons
+            showCouponsModal();
           };
 
           // payment methods
@@ -1084,9 +1149,9 @@
               ghiChu: note.value || '',
               isPickup: false,
               tongTien: total,
-              tongTienSauGiam: total,
+              tongTienSauGiam: Math.max(0, total - (discountAmount||0)),
               phuongThucId: null,
-              phieuGiamGiaId: null,
+              phieuGiamGiaId: appliedCoupon ? appliedCoupon.id : null,
               items: items
             };
 
