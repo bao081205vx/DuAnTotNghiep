@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple GHN Express SVG placeholder (orange + blue) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="64" viewBox="0 0 240 64" preserveAspectRatio="xMinYMid meet">
+  <rect width="240" height="64" rx="6" fill="none"/>
+  <!-- stylized box mark -->
+  <g transform="translate(6,6)">
+    <path d="M0 8 L28 0 L56 8 L28 56 Z" fill="#0b5b8f" opacity="0.95" />
+    <path d="M18 6 L72 6 L54 24 L0 24 Z" transform="translate(-6,6)" fill="#ff7a00" opacity="0.95"/>
+  </g>
+  <!-- GHN text -->
+  <g transform="translate(96,12)">
+    <text x="0" y="20" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#ff7a00">GHN</text>
+    <text x="0" y="40" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#0b5b8f">Express</text>
+  </g>
+</svg>

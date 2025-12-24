@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thanh toán VNPay thành công</title>
+  <style>
+    body{background:#f5f7fb;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
+    .card{background:#fff;border-radius:10px;box-shadow:0 10px 30px rgba(15,23,42,0.08);width:520px;max-width:94%;padding:28px}
+    .card .top{display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{height:36px}
+    .amount{color:#e53935;font-weight:800;font-size:20px}
+    .body{display:flex;gap:20px;padding-top:18px}
+    .left{flex:1}
+    .right{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .check{width:96px;height:96px;border-radius:999px;background:#e6fff0;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+    .check svg{width:56px;height:56px;fill:#10b981}
+    h2{margin:0 0 8px 0;font-size:22px}
+    p.small{color:#6b7280;margin:6px 0}
+    .order-code{color:#0ea5a1;font-weight:700;text-decoration:none}
+    .btn{display:inline-block;background:#f97316;color:#fff;padding:10px 18px;border-radius:8px;border:0;cursor:pointer;font-weight:800;text-decoration:none}
+    .btn.secondary{background:#fff;color:#111;border:1px solid #eee}
+    .meta{background:#fafafa;border-radius:8px;padding:12px;margin-bottom:12px}
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <div class="top">
+      <div class="brand">
+        <img src="/client/js/vnpay-logo.png" onerror="this.style.display='none'" alt="VNPay" />
+        <div style="font-weight:800">VN PAY</div>
+      </div>
+      <div class="amount" id="displayAmount">0 ₫</div>
+    </div>
+
+    <div class="body">
+      <div class="left">
+        <div class="meta">
+          <div style="font-size:13px;color:#374151">Giá trị đơn hàng</div>
+          <div style="font-size:18px;font-weight:800;color:#111" id="leftAmount">0 ₫</div>
+          <div style="margin-top:8px;color:#6b7280">Mã đơn hàng</div>
+          <div style="font-weight:700;margin-top:6px"><a id="orderCode" class="order-code" href="#"></a></div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="check" aria-hidden>
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M20.285 6.708a1 1 0 00-1.414-1.416l-9.192 9.186-3.182-3.18a1 1 0 10-1.414 1.414l3.889 3.888a1 1 0 001.414 0l10.599-10.892z"/></svg>
+        </div>
+        <h2>Đặt hàng thành công!</h2>
+        <p class="small">Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đang được xử lý.</p>
+        <a id="continueBtn" class="btn" href="/">TIẾP TỤC MUA SẮM</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function qs() {
+      const q = {};
+      const s = window.location.search.replace(/^\?/, "");
+      if (!s) return q;
+      s.split('&').forEach(pair => {
+        const [k,v] = pair.split('=');
+        try { q[decodeURIComponent(k)] = decodeURIComponent(v || ''); } catch(e) { q[k] = v || ''; }
+      });
+      return q;
+    }
+    function fmt(n){ if(n==null||n==='') return ''; try{ const x = Number(n); if(isNaN(x)) return n; return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.') + ' ₫'; }catch(e){return n} }
+
+    (function(){
+      const p = qs();
+      const invoiceId = p.invoiceId || p.invoice || '';
+      const amount = p.amount || p.vnp_Amount || '';
+      const orderCode = p.orderCode || p.order || invoiceId;
+
+      // VNPay may send amount in 'cents' (VND*100) so normalize
+      let displayAmount = amount;
+      if (displayAmount && displayAmount.length>3) {
+        // if numeric and divisible by 100, divide
+        const num = Number(displayAmount);
+        if (!isNaN(num)) {
+          if (num % 100 === 0) {
+            displayAmount = String(Math.round(num/100));
+          }
+        }
+      }
+
+      document.getElementById('displayAmount').textContent = fmt(displayAmount);
+      const left = document.getElementById('leftAmount'); if(left) left.textContent = fmt(displayAmount);
+      const oc = document.getElementById('orderCode'); if(oc){ oc.textContent = orderCode; oc.href = '#'; }
+
+      // Continue button: go to home or to invoice details if available
+      const cbtn = document.getElementById('continueBtn');
+      if (invoiceId) {
+        cbtn.href = '/client/order.html?invoiceId=' + encodeURIComponent(invoiceId);
+      } else {
+        cbtn.href = '/';
+      }
+    })();
+  </script>
+</body>
+</html>

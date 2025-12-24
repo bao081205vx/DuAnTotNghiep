@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thống kê</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;padding:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .card{background:#fff;border:1px solid #e5e7eb;padding:12px;border-radius:6px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+  </style>
+</head>
+<body>
+  <h1>Trang thống kê</h1>
+  
+  <!-- Summary Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-bottom:18px">
+    <div class="card" style="border-left:4px solid #0ea5a4">
+      <div style="font-size:0.85em;color:#888">Tổng doanh thu (7 ngày)</div>
+      <div id="summaryTotalRevenue" style="font-size:1.8em;font-weight:bold;color:#0ea5a4;margin-top:8px">0 ₫</div>
+    </div>
+    <div class="card" style="border-left:4px solid #16a34a">
+      <div style="font-size:0.85em;color:#888">Doanh thu thực tế (Hoàn thành)</div>
+      <div id="summaryActualRevenue" style="font-size:1.8em;font-weight:bold;color:#16a34a;margin-top:8px">0 ₫</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Trạng thái đơn hàng <span style="font-size:0.85em;color:#888;">(Toàn năm)</span></h3>
+      <canvas id="statusChart" width="300" height="200"></canvas>
+      <div id="statusLegend" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>Doanh thu</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="filter-btn bg-white" data-range="week">7 ngày</button>
+        <button class="filter-btn" data-range="month">12 tháng</button>
+        <button class="filter-btn" data-range="year">Năm</button>
+        <button class="chart-type-btn" data-chart-type="line">Line</button>
+        <button class="chart-type-btn" data-chart-type="bar">Bar</button>
+      </div>
+      <canvas id="revenueLineChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3>Sản phẩm bán chạy</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div>
+        Show
+        <select id="pageSize"><option value="5">5</option><option value="10">10</option><option value="20">20</option></select>
+        entries
+      </div>
+      <div>
+        <button id="exportBtn">Export CSV</button>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Hình</th><th>Tên</th><th>Số lượng</th><th>Doanh thu</th><th>Kích thước</th></tr></thead>
+      <tbody id="topProductsBody"></tbody>
+    </table>
+    <div id="pagination" style="margin-top:8px"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/stats.js"></script>
+</body>
+</html>
