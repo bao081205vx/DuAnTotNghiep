@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Đăng nhập - BagiStore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root{--orange:#f97316;--dark:#0f172a;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;background:#fff;color:var(--dark);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    .card{width:100%;max-width:420px;border:1px solid #eee;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,0.06);overflow:hidden}
+    .card .header{background:linear-gradient(90deg,var(--orange),#ff8a4b);color:#fff;padding:22px 20px;text-align:center}
+    .logo{display:flex;align-items:center;justify-content:center;gap:12px}
+    .logo img{height:56px;width:56px;object-fit:contain}
+    .logo h1{font-size:20px;margin:0;font-weight:800;letter-spacing:0.6px}
+    .card .body{padding:20px}
+    form{display:flex;flex-direction:column;gap:12px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+    input[type="text"],input[type="password"]{width:100%;padding:12px 14px;border:1px solid #e6e6e6;border-radius:8px;font-size:14px}
+    .row{display:flex;align-items:center;justify-content:space-between}
+    .forgot{font-size:13px;color:var(--muted);text-decoration:none}
+    .btn{background:var(--orange);color:#fff;border:0;padding:12px 14px;border-radius:8px;font-weight:700;cursor:pointer}
+    .alt{background:#fff;color:var(--orange);border:1px solid #f3f3f3}
+    .small{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
+    .small a{color:var(--orange);text-decoration:none;font-weight:700}
+    @media (max-width:480px){ .card{max-width:100%} }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <div class="header">
+      <div class="logo">
+        <img src="/logo2.png" alt="BagiStore logo">
+        <h1>BagiStore</h1>
+      </div>
+      <div style="margin-top:8px;font-size:13px;opacity:.95">Đăng nhập để tiếp tục mua sắm</div>
+    </div>
+    <div class="body">
+      <form id="loginForm">
+        <div>
+          <label for="username">Tên đăng nhập</label>
+          <input id="username" name="username" type="text" placeholder="Nhập tên đăng nhập" required>
+        </div>
+
+        <div>
+          <label for="password">Mật khẩu</label>
+          <input id="password" name="password" type="password" placeholder="Nhập mật khẩu" required>
+        </div>
+
+        <div class="row">
+          <div style="display:flex;align-items:center;gap:8px"><input id="remember" type="checkbox"><label for="remember" style="font-size:13px;color:var(--muted);margin:0">Ghi nhớ</label></div>
+        </div>
+
+        <button type="submit" class="btn">Đăng nhập</button>
+      </form>
+
+      <div class="small">Chưa có tài khoản? <a href="/client/register">Đăng ký</a></div>
+    </div>
+  </div>
+
+  <script>
+    // simple toast implementation for client pages (supports types)
+    function showToast(message, type = 'success', duration = 3000) {
+      try{
+        let t = document.getElementById('global-toast');
+        if(!t){
+          t = document.createElement('div');
+          t.id = 'global-toast';
+          t.style.position = 'fixed';
+          t.style.right = '20px';
+          t.style.top = '20px';
+          t.style.zIndex = 99999;
+          document.body.appendChild(t);
+        }
+        const el = document.createElement('div');
+        el.textContent = message;
+        el.style.padding = '10px 14px';
+        el.style.borderRadius = '8px';
+        el.style.boxShadow = '0 6px 18px rgba(2,6,23,0.2)';
+        el.style.marginTop = '8px';
+        el.style.fontWeight = '600';
+        if (type === 'success') {
+          el.style.background = '#ecfdf5';
+          el.style.color = '#065f46';
+          el.style.borderLeft = '4px solid #16a34a';
+        } else if (type === 'error') {
+          el.style.background = '#fee2e2';
+          el.style.color = '#991b1b';
+          el.style.borderLeft = '4px solid #ef4444';
+        } else if (type === 'warning') {
+          el.style.background = '#fef3c7';
+          el.style.color = '#92400e';
+          el.style.borderLeft = '4px solid #f59e0b';
+        } else {
+          el.style.background = 'rgba(15,23,42,0.95)';
+          el.style.color = '#fff';
+        }
+        t.appendChild(el);
+        setTimeout(()=>{ el.style.transition = 'opacity 0.3s ease'; el.style.opacity = '0'; setTimeout(()=> el.remove(), 300); }, duration);
+      }catch(e){ console.warn('showToast error', e); }
+    }
+    // convenience wrapper for error toasts
+    function showToastError(message, duration = 3000) {
+      showToast(message, 'error', duration);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      if(!u || !p){ showToast('Vui lòng nhập tên đăng nhập và mật khẩu', 'warning'); return; }
+
+      // Decide API base depending on dev origin (if static server on 5500)
+      const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '8080'
+        ? 'http://localhost:8080'
+        : '';
+
+      try{
+        const res = await fetch(API_BASE + '/api/auth/customer/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        if(!res.ok){
+          const text = await res.text();
+          throw new Error(text || res.statusText || 'Đăng nhập thất bại');
+        }
+        const data = await res.json();
+        // expected: { id, hoTen, email, soDienThoai, anhKhachHang, token }
+        if(data && data.token){
+          // save token and full profile object returned by the server
+          localStorage.setItem('bagistore_token', data.token);
+          try{ localStorage.setItem('bagistore_user', JSON.stringify(data)); }catch(e){ console.warn('Failed to save user profile locally', e); }
+          // show toast then redirect
+          showToast('Đăng nhập thành công');
+          setTimeout(()=> window.location.href = '/client', 800);
+        } else {
+          showToast('Đăng nhập thành công nhưng không nhận được token');
+          setTimeout(()=> window.location.href = '/client', 800);
+        }
+      }catch(err){
+        console.error('Login failed', err);
+        showToastError('Đăng nhập thất bại');
+      }
+    });
+
+    // 'Quên mật khẩu' removed from UI
+  </script>
+</body>
+</html>

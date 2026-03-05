@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Đăng nhập - Quản trị</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html,body { height:100%; }
+        body { background: #f3f4f6; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+        /* Large faded logo/text behind the login card */
+        .bg-logo { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+        .bg-logo h1 { font-size: 220px; color:#f97316; opacity:0.06; transform: rotate(-6deg); margin:0; font-weight:800; letter-spacing:8px; user-select:none; }
+        .login-wrapper { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+        .login-card { width:100%; max-width:420px; background:white; border-radius:12px; padding:28px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); position:relative; z-index:2; }
+        .form-group label { font-weight:600; font-size:0.9rem; color:#374151; }
+        .form-control { border:1px solid #e6e7ea; border-radius:8px; padding:10px 12px; }
+        .brand-small { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+        .brand-small img { height:40px; width:auto; }
+        .forgot-link { font-size:0.9rem; color:#6b7280; }
+        .login-actions { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; }
+        @media (max-width:480px){ .bg-logo h1 { font-size:100px; opacity:0.05; } }
+    </style>
+</head>
+<body>
+    <div class="bg-logo" aria-hidden>
+        <h1>Đăng Nhập</h1>
+    </div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="brand-small">
+                <div style="width:44px;height:44px;border-radius:8px;background:#f97316;color:white;display:flex;align-items:center;justify-content:center;font-weight:700">B</div>
+                <div>
+                    <div style="font-weight:800;font-size:1.05rem;color:#111827">Bagi Store</div>
+                    <div style="font-size:0.85rem;color:#6b7280">Quản trị viên</div>
+                </div>
+            </div>
+
+            <h2 class="mb-2" style="font-size:1.25rem;font-weight:700;color:#0f172a">Đăng nhập</h2>
+            <p class="text-muted" style="margin-bottom:16px;color:#6b7280">Vui lòng nhập tên đăng nhập và mật khẩu của bạn.</p>
+
+            <!-- Toast UI for login page (compatible with legacy toast structure) -->
+            <div id="toast" class="toast" role="status" aria-live="polite" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateX(400px);transition:transform .3s;z-index:9999;min-width:320px;">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.08);">
+                    <div class="w-8 h-8" style="width:32px;height:32px;border-radius:9999px;background:#10b981;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">✓</div>
+                    <div style="flex:1">
+                        <div id="toastMessage" style="color:#111;font-weight:600">Thông báo</div>
+                        <div style="height:6px;background:#e5e7eb;border-radius:6px;margin-top:8px;overflow:hidden"><div id="progressFill" style="height:100%;width:0%;background:#10b981;transition:width 3s linear"></div></div>
+                    </div>
+                    <button onclick="closeToast()" style="background:transparent;border:none;color:#9ca3af;font-size:18px;margin-left:8px">✕</button>
+                </div>
+            </div>
+
+            <script>
+                function resetToastToDefault(){
+                    const toast = document.getElementById('toast');
+                    const progressFill = document.getElementById('progressFill');
+                    if(!toast || !progressFill) return;
+                    const icon = toast.querySelector('.w-8.h-8') || toast.querySelector('.w-8');
+                    if(icon) { icon.style.background = '#10b981'; icon.textContent = '✓'; }
+                    progressFill.style.background = '#10b981';
+                    progressFill.style.width = '0%';
+                }
+                function showToast(msg){
+                    const toast = document.getElementById('toast');
+                    const toastMessage = document.getElementById('toastMessage');
+                    const progressFill = document.getElementById('progressFill');
+                    if(!toast || !toastMessage || !progressFill) return;
+                    resetToastToDefault();
+                    toastMessage.textContent = msg || '';
+                    toast.style.transform = 'translateX(-50%) translateX(0)';
+                    // animate progress
+                    setTimeout(()=>{ progressFill.style.width='100%'; }, 20);
+                    setTimeout(()=>{ closeToast(); }, 3000);
+                }
+                function showToastError(msg){
+                    const toast = document.getElementById('toast');
+                    const toastMessage = document.getElementById('toastMessage');
+                    const progressFill = document.getElementById('progressFill');
+                    if(!toast || !toastMessage || !progressFill) return;
+                    resetToastToDefault();
+                    const icon = toast.querySelector('.w-8.h-8') || toast.querySelector('.w-8');
+                    if(icon){ icon.style.background = '#ef4444'; icon.textContent = '✕'; }
+                    progressFill.style.background = '#ef4444';
+                    toastMessage.textContent = msg || '';
+                    toast.style.transform = 'translateX(-50%) translateX(0)';
+                    setTimeout(()=>{ progressFill.style.width='100%'; }, 20);
+                    setTimeout(()=>{ closeToast(); }, 3000);
+                }
+                function closeToast(){ const toast = document.getElementById('toast'); const progressFill = document.getElementById('progressFill'); if(toast) toast.style.transform='translateX(-50%) translateX(400px)'; if(progressFill){ progressFill.style.width='0%'; setTimeout(()=>{ resetToastToDefault(); },350); } }
+            </script>
+
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Tên đăng nhập</label>
+                    <input id="username" name="username" class="form-control form-control-sm form-control" required placeholder="Nhập tên đăng nhập" />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <input id="password" name="password" type="password" class="form-control form-control-sm form-control" required placeholder="Nhập mật khẩu" />
+                </div>
+
+                <div class="login-actions">
+                    <a href="#" class="forgot-link" id="forgotLink">Quên mật khẩu?</a>
+                    <button type="submit" class="btn btn-orange px-4 py-2" style="background:#f97316;border:none;color:white;border-radius:8px;font-weight:700">Đăng nhập</button>
+                </div>
+            </form>
+
+            <script>
+                // If this page is loaded as a top-level document at /login.html,
+                // rewrite the address bar to '/login' so the URL looks like http://.../login
+                // without changing the current document (preserve UI).
+                try {
+                    if (window.top === window) {
+                        // Only rewrite when loaded as top-level (not inside iframe)
+                        const p = window.location.pathname || '';
+                        if (p.endsWith('/login.html') || p.endsWith('login.html')) {
+                            history.replaceState(null, '', '/login');
+                        }
+                    }
+                } catch (e) {
+                    // ignore
+                }
+
+                const API_BASES = (location.protocol === 'file:') ? ['http://localhost:8080'] : [''];
+                document.getElementById('loginForm').addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    const uEl = document.getElementById('username');
+                    const pEl = document.getElementById('password');
+                    var u = uEl.value.trim();
+                    var pwd = pEl.value || '';
+                    if(!u){ alert('Vui lòng nhập tên đăng nhập'); uEl.focus(); return; }
+                    if(!pwd){ alert('Vui lòng nhập mật khẩu'); pEl.focus(); return; }
+
+                    // try calling backend login endpoint; try likely bases
+                    let lastErr = null;
+                    // Try backend origins first, then current origin (useful when developing with Vite)
+                    const bases = ['http://localhost:8080','http://localhost:8081', window.location.origin || ''];
+                    for(const b of bases){
+                        try{
+                            const url = (b || '') + '/api/auth/login';
+                            const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ username: u, password: pwd }) });
+                            if(res.ok){
+                                const data = await res.json();
+                                // persist current user in localStorage (frontend session)
+                                try{ localStorage.setItem('bagistore_current_user', JSON.stringify(data)); } catch(err){ console.warn('localStorage set failed', err); }
+                                // show success toast on login page and instruct admin shell to show toast after redirect
+                                try{ showToast('Đăng nhập thành công'); }catch(e){}
+                                try{ localStorage.setItem('bagistore_show_login_success','1'); }catch(e){}
+                                // redirect back to SPA root on the same origin where the login page is open
+                                const redirectOrigin = window.location.origin || (b || '');
+                                // If the login page is loaded inside an iframe, ensure the top window navigates
+                                try { top.location.href = redirectOrigin + '/'; } catch(e) { location.href = redirectOrigin + '/'; }
+                                return;
+                            } else {
+                                lastErr = await res.text().catch(()=>String(res.status));
+                                // if 401, break and show message
+                                if(res.status === 401){ try{ showToastError('Tài khoản hoặc mật khẩu không đúng'); }catch(e){}; break; }
+                                // otherwise try next base
+                                continue;
+                            }
+                        }catch(err){ lastErr = err; continue; }
+                    }
+                    try{
+                        // show friendly error toast instead of alert
+                        showToastError('Đăng nhập thất bại: ' + (lastErr ? String(lastErr) : 'Không thể kết nối tới máy chủ'));
+                    }catch(e){
+                        // fallback to alert if toast unavailable
+                        alert('Đăng nhập thất bại: ' + (lastErr ? String(lastErr) : 'Không thể kết nối tới máy chủ'));
+                    }
+                });
+
+                document.getElementById('forgotLink').addEventListener('click', function(e){ e.preventDefault(); alert('Hướng dẫn quên mật khẩu: liên hệ quản trị hệ thống.'); });
+            </script>
+        </div>
+    </div>
+
+            
+</body>
+</html>

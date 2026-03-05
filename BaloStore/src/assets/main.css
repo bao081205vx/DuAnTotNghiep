@@ -1,0 +1,55 @@
+@import './base.css';
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
+  }
+}
+
+/* When embedding the legacy full-page UI we need to disable the app max width
+   and remove padding so the legacy page can occupy the whole viewport. */
+body.legacy-fullscreen {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body.legacy-fullscreen #app {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100vh !important;
+}
+
+/* Prevent double scroll on parent when legacy UI is shown */
+body.legacy-fullscreen {
+  overflow: hidden;
+}
